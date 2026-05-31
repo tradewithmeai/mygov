@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MyGov</string>
+    <string name="error_title">Connection failed</string>
+    <string name="error_message">Could not load MyGov. Check your connection and try again.</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_open_browser">Open in Browser</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_forward">Forward</string>
+    <string name="btn_refresh">Refresh</string>
+    <string name="btn_external">External</string>
+    <string name="btn_share">Share</string>
+    <string name="share_via">Share via…</string>
+</resources>
