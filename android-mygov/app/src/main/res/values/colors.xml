@@ -7,4 +7,5 @@
     <color name="on_surface">#E2E8F0</color>
     <color name="divider">#243050</color>
     <color name="error_bg">#0F1724</color>
+    <color name="ic_launcher_background">#0B1020</color>
 </resources>
