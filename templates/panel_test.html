@@ -33,6 +33,17 @@
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       ></iframe>
 
+      <button type="button" id="global-cross-toggle" class="global-cross-toggle" title="Toggle global feasibility crosses" aria-label="Toggle global feasibility crosses">🌐</button>
+      <div id="global-cross-overlay" class="global-cross-overlay" hidden>
+        <div id="global-cross-layer" class="global-cross-layer" aria-hidden="true"></div>
+        <article id="global-cross-card" class="global-cross-card" hidden>
+          <h3 id="gcc-name">Country</h3>
+          <p id="gcc-status"></p>
+          <p id="gcc-summary"></p>
+          <p id="gcc-next"></p>
+        </article>
+      </div>
+
       <!-- Concentric menu: rings 1 (Explain) + 2 (wedges) always visible.
            Centre is the S search trigger (replaces the old M button). -->
       <div id="service-menu" class="service-menu always-on" role="group" aria-label="Map service controls">
@@ -90,15 +101,20 @@
                angular midpoints (240° between L-M, 0° between M-G,
                120° between G-L). Counter-rotation on .nav-label-text
                keeps the glyphs upright while the parent ring spins. -->
-          <span class="nav-label" aria-hidden="true" style="--icon-angle: 240deg;">
-            <span class="nav-label-text">Source</span>
-          </span>
-          <span class="nav-label" aria-hidden="true" style="--icon-angle:   0deg;">
-            <span class="nav-label-text">Source</span>
-          </span>
-          <span class="nav-label" aria-hidden="true" style="--icon-angle: 120deg;">
-            <span class="nav-label-text">Source</span>
-          </span>
+          <svg class="nav-source-ring" viewBox="0 0 280 280" aria-hidden="true">
+            <defs>
+              <path id="nav-source-path" d="M 140,12 A 128,128 0 1,1 139.9,12" fill="none" />
+            </defs>
+            <text class="nav-source-text">
+              <textPath href="#nav-source-path" startOffset="5%">Source</textPath>
+            </text>
+            <text class="nav-source-text">
+              <textPath href="#nav-source-path" startOffset="38.333%">Source</textPath>
+            </text>
+            <text class="nav-source-text">
+              <textPath href="#nav-source-path" startOffset="71.666%">Source</textPath>
+            </text>
+          </svg>
         </div>
 
         <!-- Search core: S button + horizontally-expanding input replace

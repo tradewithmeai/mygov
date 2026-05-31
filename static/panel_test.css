@@ -2763,5 +2763,176 @@ text.ring-svg-text {
   display: none !important;
 }
 
+.global-cross-toggle {
+  position: absolute;
+  top: 12px;
+  right: 64px;
+  z-index: 8;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(8, 18, 34, 0.82);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+.global-cross-toggle:hover { border-color: rgba(125, 211, 252, 0.6); }
+.global-cross-toggle.is-on {
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+  border-color: rgba(125, 211, 252, 0.7);
+}
+
+.global-cross-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.global-cross-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.global-cross-marker {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.global-cross-marker::before,
+.global-cross-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  border-radius: 1px;
+}
+.global-cross-marker::before { width: 12px; height: 2px; }
+.global-cross-marker::after { width: 2px; height: 12px; }
+.global-cross-marker.green { color: #16a34a; }
+.global-cross-marker.orange { color: #f59e0b; }
+.global-cross-marker.red { color: #dc2626; }
+.global-cross-marker.live {
+  color: #39ff14;
+  filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.8));
+}
+
+.global-cross-card {
+  position: absolute;
+  left: 12px;
+  bottom: 72px;
+  max-width: 320px;
+  background: rgba(8, 18, 34, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #e5e7eb;
+  pointer-events: auto;
+}
+.global-cross-card h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.global-cross-card p {
+  margin: 4px 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Final polish hotfix: centered S, clean wedge labels, curved Source text */
+
+/* Keep the search anchor exactly on the menu center in both states. */
+.service-menu #map-search,
+.service-menu #map-search.is-collapsed,
+.service-menu #map-search.is-expanded {
+  left: 0;
+  top: 0;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+}
+
+/* Prevent trigger drift from legacy centering styles. */
+.service-menu #map-search .map-search-trigger.service-menu-center {
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: 0;
+  transform: none;
+  flex: 0 0 var(--size);
+}
+
+/* Instant open and strong stacking over ring controls. */
+.service-menu #map-search,
+.service-menu #map-search.is-expanded {
+  transition: none !important;
+  z-index: 30;
+}
+.service-menu #map-search.is-expanded {
+  width: 240px;
+}
+@media (max-width: 920px) {
+  .service-menu #map-search.is-expanded { width: min(86vw, 320px); }
+}
+
+/* Make right edge rounded to match the S circle. */
+.service-menu #map-search.is-expanded .map-search-input {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+/* Wedge labels: centered chips inside each wedge, consistent and readable. */
+.wedge-label {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font: 700 12px/1.1 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #e6f6ff;
+  background: rgba(8, 18, 34, 0.55);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  pointer-events: none;
+}
+.wedge-ne .wedge-label { top: 25%; right: 19%; }
+.wedge-se .wedge-label { bottom: 25%; right: 19%; }
+.wedge-sw .wedge-label { bottom: 25%; left: 19%; }
+.wedge-nw .wedge-label { top: 25%; left: 19%; }
+
+/* Curved Source text follows nav ring path and rotates with the ring. */
+.nav-label,
+.nav-label-text {
+  display: none !important;
+}
+.nav-source-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 280px;
+  height: 280px;
+  margin: -140px 0 0 -140px;
+  overflow: visible;
+  pointer-events: none;
+}
+.nav-source-text {
+  fill: rgba(186, 230, 253, 0.52);
+  font: 700 10px/1 "Source Serif Pro", Georgia, serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 
 

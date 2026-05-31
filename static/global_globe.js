@@ -40,7 +40,6 @@ const els = {
   orange: document.getElementById('stat-orange'),
   red: document.getElementById('stat-red'),
   unmapped: document.getElementById('stat-unmapped'),
-  total: document.getElementById('stat-total'),
   countryName: document.getElementById('country-name'),
   countryStatus: document.getElementById('country-status'),
   statusDot: document.getElementById('status-dot'),
@@ -112,14 +111,11 @@ function updateStats(payload) {
 
   const liveCount = counts.live ?? payload.countries.filter((country) => country.working_adapter).length;
   const unmappedCount = counts.red ?? payload.countries.filter((country) => country.status === 'red').length;
-  const mappedCount = Math.max(0, (counts.total ?? payload.countries.length) - unmappedCount);
-
   els.live.textContent = liveCount;
   els.green.textContent = counts.green ?? 0;
   els.orange.textContent = counts.orange ?? 0;
   els.red.textContent = counts.red ?? 0;
   els.unmapped.textContent = unmappedCount;
-  els.total.textContent = mappedCount;
 }
 
 function getCountryStatusLabel(country) {
@@ -313,8 +309,9 @@ function createGlobe(countries) {
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog('#020617', 7, 22);
 
-  camera = new THREE.PerspectiveCamera(42, stage.clientWidth / stage.clientHeight, 0.1, 100);
-  camera.position.set(0, 0, 6.2);
+  camera = new THREE.PerspectiveCamera(46, stage.clientWidth / stage.clientHeight, 0.1, 100);
+  // Wider default framing so the full globe is clearly visible on first paint.
+  camera.position.set(0, 0, 7.25);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -526,7 +523,7 @@ function bindControls() {
   stage.addEventListener('wheel', (event) => {
     event.preventDefault();
     const nextZ = camera.position.z + event.deltaY * 0.003;
-    camera.position.z = THREE.MathUtils.clamp(nextZ, 4.2, 9.5);
+    camera.position.z = THREE.MathUtils.clamp(nextZ, 5.4, 10.2);
   }, { passive: false });
 
   stage.addEventListener('keydown', (event) => {

@@ -668,13 +668,28 @@
     doc.__mygovLensBound = true;
     syncSourceCursor();
     var lastNavCandidate = { href: '', ts: 0 };
+    function _divisionIdFromClickTarget(target) {
+      if (!target) return null;
+      var row = target.closest('[data-lens-division-id],[data-division-id]');
+      if (row) {
+        var rid = row.getAttribute('data-lens-division-id') || row.getAttribute('data-division-id');
+        if (rid && /^\d+$/.test(String(rid))) return parseInt(rid, 10);
+      }
+      var link = target.closest('a[href]');
+      if (!link) return null;
+      var href = link.getAttribute('href') || '';
+      var match = href.match(/\/publicwhip\/division\/(\d+)/) || href.match(/\/division\/(\d+)/);
+      if (match) return parseInt(match[1], 10);
+      var did = link.getAttribute('data-lens-division-id') || link.getAttribute('data-division-id');
+      if (did && /^\d+$/.test(String(did))) return parseInt(did, 10);
+      return null;
+    }
     doc.addEventListener('click', function (event) {
       if (doc.body && doc.body.classList.contains('explain-mode-on')) return;
-      var link = event.target.closest('a[href*="/publicwhip/division/"]');
-      if (!link) return;
-      var match = link.getAttribute('href').match(/\/publicwhip\/division\/(\d+)/);
-      if (!match) return;
-      var href = link.getAttribute('href') || '';
+      var divisionId = _divisionIdFromClickTarget(event.target);
+      if (!divisionId) return;
+      var link = event.target.closest('a[href]');
+      var href = link ? (link.getAttribute('href') || '') : '';
       var now = Date.now();
       // Two-step UX: first click drives the map; second click (same link, short window)
       // navigates normally inside the iframe.
@@ -684,7 +699,7 @@
       }
       event.preventDefault();
       lastNavCandidate = { href: href, ts: now };
-      visualiseDivision(match[1], 'same-origin-publicwhip').catch(function (err) {
+      visualiseDivision(divisionId, 'same-origin-publicwhip').catch(function (err) {
         setStatus(err.message, 'warn');
       });
       setStatus('Map updated. Click the same division again to open the source page.', 'ok');
@@ -1436,12 +1451,25 @@
       return;
     }
     doc.__mygovLensTourBound = true;
+    function _divisionIdFromClickTarget(target) {
+      if (!target) return null;
+      var row = target.closest('[data-lens-division-id],[data-division-id]');
+      if (row) {
+        var rid = row.getAttribute('data-lens-division-id') || row.getAttribute('data-division-id');
+        if (rid && /^\d+$/.test(String(rid))) return parseInt(rid, 10);
+      }
+      var link = target.closest('a[href]');
+      if (!link) return null;
+      var href = link.getAttribute('href') || '';
+      var match = href.match(/\/publicwhip\/division\/(\d+)/) || href.match(/\/division\/(\d+)/);
+      if (match) return parseInt(match[1], 10);
+      return null;
+    }
     // Pre-capture: if visualise off and click would target a division link, intercept.
     doc.addEventListener('click', function (event) {
       if (visualiseActive) return;
       if (doc.body && doc.body.classList.contains('explain-mode-on')) return;
-      var link = event.target.closest('a[href*="/publicwhip/division/"]');
-      if (!link) return;
+      if (!_divisionIdFromClickTarget(event.target)) return;
       event.preventDefault();
       event.stopPropagation();
       showVisualiseHint();
@@ -1699,6 +1727,96 @@
 
     // Keep card inside bounds on resize / orientation change.
     window.addEventListener('resize', function () { snapToNearestCorner(); });
+  })();
+
+  // ── Global feasibility crosses overlay (2D map pane) ───────────────
+  (function setupGlobalCrossOverlay() {
+    var toggle = document.getElementById('global-cross-toggle');
+    var overlay = document.getElementById('global-cross-overlay');
+    var layer = document.getElementById('global-cross-layer');
+    var card = document.getElementById('global-cross-card');
+    var nameEl = document.getElementById('gcc-name');
+    var statusEl = document.getElementById('gcc-status');
+    var summaryEl = document.getElementById('gcc-summary');
+    var nextEl = document.getElementById('gcc-next');
+    if (!toggle || !overlay || !layer || !card) return;
+
+    var countries = [];
+    var on = false;
+
+    function statusText(c) {
+      if (c.working_adapter) return 'Completed and live';
+      return c.status_label || c.status || 'Unknown';
+    }
+
+    function markerClass(c) {
+      if (c.working_adapter) return 'live';
+      if (c.status === 'green') return 'green';
+      if (c.status === 'orange') return 'orange';
+      return 'red';
+    }
+
+    function project(lon, lat, width, height) {
+      var x = ((lon + 180) / 360) * width;
+      var y = ((90 - lat) / 180) * height;
+      return { x: x, y: y };
+    }
+
+    function showCard(c) {
+      nameEl.textContent = c.name || 'Country';
+      statusEl.textContent = statusText(c);
+      summaryEl.textContent = c.summary || '';
+      nextEl.textContent = c.next_action || '';
+      card.hidden = false;
+    }
+
+    function renderMarkers() {
+      if (!on || !countries.length) return;
+      while (layer.firstChild) layer.removeChild(layer.firstChild);
+      var rect = layer.getBoundingClientRect();
+      var w = rect.width;
+      var h = rect.height;
+      countries.forEach(function (c) {
+        if (typeof c.lon !== 'number' || typeof c.lat !== 'number') return;
+        var p = project(c.lon, c.lat, w, h);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'global-cross-marker ' + markerClass(c);
+        btn.style.left = p.x + 'px';
+        btn.style.top = p.y + 'px';
+        btn.title = (c.name || 'Country') + ' · ' + statusText(c);
+        btn.setAttribute('aria-label', btn.title);
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          showCard(c);
+        });
+        layer.appendChild(btn);
+      });
+    }
+
+    function setOn(next) {
+      on = !!next;
+      overlay.hidden = !on;
+      toggle.classList.toggle('is-on', on);
+      if (!on) {
+        card.hidden = true;
+        return;
+      }
+      renderMarkers();
+    }
+
+    toggle.addEventListener('click', function () { setOn(!on); });
+    overlay.addEventListener('click', function () { card.hidden = true; });
+    window.addEventListener('resize', function () { if (on) renderMarkers(); });
+
+    fetch('/api/global/feasibility')
+      .then(function (r) { return r.json(); })
+      .then(function (payload) {
+        countries = (payload && payload.countries) || [];
+      })
+      .catch(function () {
+        countries = [];
+      });
   })();
 
   // ── Mobile single-panel toolbar ───────────────────────────────
