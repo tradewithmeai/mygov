@@ -1,0 +1,10 @@
+{
+  "source": "Westminster Parliamentary Constituencies (July 2024) Boundaries UK BGC",
+  "sourceItemId": "b49f0eeb2ce540f394831ba3a514d86e",
+  "boundaryType": "BGC",
+  "description": "Generalised 20m, clipped to coastline. Recommended browser balance.",
+  "downloadedAt": "2026-05-26T21:28:07.226Z",
+  "featureCount": 650,
+  "coordinateReferenceSystem": "EPSG:4326",
+  "attribution": "Office for National Statistics Open Geography Portal; contains Ordnance Survey and ONS intellectual property."
+}

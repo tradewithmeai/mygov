@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyGov Lens — Public Record Explorer</title>
+<link rel="stylesheet" href="/static/lens.css">
+<link rel="stylesheet" href="/static/explain-mode.css">
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="lens-topbar">
+  <a href="/" class="brand">MyGov</a>
+  <div class="divider"></div>
+  <span class="lens-label">Lens</span>
+  <div class="spacer"></div>
+  <a href="/" class="nav-link">Search</a>
+  <a href="/compare" class="nav-link">A/B</a>
+  <a href="/map/pro" class="nav-link">Map</a>
+</div>
+
+<!-- Split body -->
+<div id="lens-body">
+
+  <!-- LEFT: Map panel -->
+  <div id="lens-left">
+    <div class="panel-header">
+      <span class="panel-title">Constituency Map</span>
+    </div>
+
+    <div id="map-iframe-wrap">
+      <iframe
+        id="map-iframe"
+        src="/map/relay"
+        title="UK Constituency Map"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        loading="lazy"
+      ></iframe>
+    </div>
+
+    <!-- Map display-mode controls -->
+    <div id="map-mode-bar">
+      <button class="mode-btn active" data-mode="constituency"
+        data-explainable="true"
+        data-explain-label="Constituency view"
+        data-explain-context="Shows UK constituencies in neutral view. Click a constituency to see its MP's public record.">
+        Constituency
+      </button>
+      <button class="mode-btn" data-mode="party"
+        data-explainable="true"
+        data-explain-label="Party view"
+        data-explain-context="Colours each constituency by the winning party at the last general election, based on Parliament's public data.">
+        Party
+      </button>
+      <button class="mode-btn" data-mode="issue"
+        data-explainable="true"
+        data-explain-label="Issue lens"
+        data-explain-context="Issue lens mode is a placeholder. When live, it will colour constituencies by MPs' voting patterns on selected policy areas. Data pending.">
+        Issue Lens
+      </button>
+      <button class="mode-btn" data-mode="source-confidence"
+        data-explainable="true"
+        data-explain-label="Source coverage"
+        data-explain-context="Shows which constituencies have fully loaded public-record data in MyGov. Grey areas indicate data is pending or not yet available via the Parliament API.">
+        Coverage
+      </button>
+    </div>
+
+    <!-- Selected MP strip (shown after map click) -->
+    <div id="mp-selected-strip"
+      data-explainable="true"
+      data-explain-label="Selected constituency"
+      data-explain-context="This bar shows the constituency you selected on the map, its MP, and a link to their public-record profile on MyGov.">
+      <span class="mp-name" id="strip-name">—</span>
+      <span class="mp-constituency" id="strip-constituency"></span>
+      <a href="#" class="mp-link" id="strip-link" target="_blank">View MP</a>
+    </div>
+  </div>
+
+  <!-- RIGHT: Source panel -->
+  <div id="lens-right">
+    <div class="panel-header">
+      <span class="panel-title">Public Record Source</span>
+    </div>
+
+    <!-- Source selector -->
+    <div id="source-selector"
+      data-explainable="true"
+      data-explain-label="Source selector"
+      data-explain-context="Switch between public-record sources. Each source is part of the same public-record family view. MyGov, TheyWorkForYou, and WriteToThem open directly here. PublicWhip loads through a deployable MyGov wrapper that can embed the local mirror when available.">
+      <button class="source-btn active" data-source="mygov">MyGov</button>
+      <button class="source-btn" data-source="twfy">TheyWorkForYou</button>
+      <button class="source-btn" data-source="wtt">WriteToThem</button>
+      <button class="source-btn" data-source="publicwhip">PublicWhip</button>
+    </div>
+
+    <!-- Source content area -->
+    <div id="source-content">
+      <!-- iframe for embeddable sources -->
+      <iframe id="source-iframe" title="Public record source" src="" loading="lazy"></iframe>
+
+      <!-- Loading overlay -->
+      <div id="source-loading" class="visible">
+        <div class="spinner"></div>
+        <span id="source-loading-label">Loading…</span>
+      </div>
+
+      <!-- Fallback card (shown for blocked sources or timeout) -->
+      <div id="source-fallback"
+        data-explainable="true"
+        data-explain-label="Source not embeddable"
+        data-explain-context="Some websites block themselves from being shown inside other pages using a browser security rule called X-Frame-Options. This is a standard security measure and MyGov does not attempt to bypass it.">
+        <div class="fallback-card">
+          <div class="fallback-icon">🔒</div>
+          <h3 id="fallback-title">Source blocked</h3>
+          <p class="fallback-reason" id="fallback-reason"></p>
+          <p class="fallback-note" id="fallback-note"></p>
+          <a href="#" class="fallback-open-btn" id="fallback-open" target="_blank" rel="noopener noreferrer">
+            Open source in new tab ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Caveat bar -->
+    <div id="lens-caveat">
+      Sources shown are third-party public-record sites or deployable family wrappers. MyGov does not endorse or control external sites.
+      This view explains public records and does not imply intent, character, wrongdoing, or corruption.
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/lens.js"></script>
+<script src="/static/explain-mode.js"></script>
+</body>
+</html>

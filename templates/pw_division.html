@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ meta.title or 'Division' }} — PublicWhip</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep">·</span>
+    Public parliamentary records
+    <span class="pw-identity-sep">·</span>
+    Inspired by Public Whip-style civic data browsing
+    <span class="pw-identity-sep">·</span>
+    <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link pw-nav-current">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+      <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <nav class="pw-breadcrumb">
+      <a class="pw-link" href="/publicwhip">PublicWhip</a>
+      <span class="pw-sep-bc">/</span>
+      <span>Division {{ meta.division_id }}</span>
+    </nav>
+
+    <section class="pw-division-header"
+             data-explainable="true"
+             data-explain-type="division"
+             data-division-id="{{ meta.division_id }}">
+      <h1 class="pw-division-title"
+          data-explainable="true"
+          data-explain-type="section"
+          data-context="division-title">{{ meta.title or 'Untitled division' }}</h1>
+      <p class="pw-division-meta">{{ (meta.division_date or '')[:10] }} &middot; House of Commons</p>
+      <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+      <div class="pw-result-bar-wrap">
+        {% set total = (meta.aye_count or 0) + (meta.no_count or 0) %}
+        {% set aye_pct = ((meta.aye_count or 0) / total * 100) | round(1) if total > 0 else 50 %}
+        <div class="pw-result-bar">
+          <div class="pw-result-aye" style="width:{{ aye_pct }}%">
+            <span class="pw-result-label">Aye {{ meta.aye_count or 0 }}</span>
+          </div>
+          <div class="pw-result-no" style="width:{{ 100 - aye_pct }}%">
+            <span class="pw-result-label">No {{ meta.no_count or 0 }}</span>
+          </div>
+        </div>
+        <p class="pw-result-outcome">
+          {% if (meta.aye_count or 0) > (meta.no_count or 0) %}
+            <strong class="pw-aye">Motion passed</strong>
+          {% elif (meta.no_count or 0) > (meta.aye_count or 0) %}
+            <strong class="pw-no">Motion defeated</strong>
+          {% else %}
+            Result tied
+          {% endif %}
+        </p>
+      </div>
+    </section>
+
+    <section class="pw-section">
+      <h2 class="pw-section-title" data-explainable="true" data-explain-type="section" data-context="division-party-breakdown">Party breakdown</h2>
+      <table class="pw-table pw-table--compact">
+        <thead>
+          <tr><th>Party</th><th class="pw-num-col">Aye</th><th class="pw-num-col">No</th></tr>
+        </thead>
+        <tbody>
+          {% for party, counts in party_breakdown.items() | sort %}
+          <tr>
+            <td>
+              <span class="pw-party-swatch" style="background:{{ party_colours.get(party, '#8a97ab') }}"></span>
+              {{ party }}
+            </td>
+            <td class="pw-num-col pw-aye">{{ counts.aye or '—' }}</td>
+            <td class="pw-num-col pw-no">{{ counts.no or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <div class="pw-voter-grid">
+      <section class="pw-section">
+        <h2 class="pw-section-title pw-aye">Ayes <span class="pw-section-count">{{ ayes | length }}</span></h2>
+        <ul class="pw-voter-list">
+          {% for v in ayes %}
+          <li>
+            <a class="pw-link" href="/publicwhip/mp/{{ v.member_id }}">{{ v.name }}</a>
+            <a class="pw-contact-mp pw-contact-mp--compact"
+               href="https://www.writetothem.com/"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Contact this MP via WriteToThem"
+               aria-label="Contact {{ v.name }} via WriteToThem">
+              <span class="pw-contact-logo" aria-hidden="true">MP</span>
+              <span>Contact</span>
+            </a>
+            <span class="pw-muted">{{ v.constituency }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="pw-section">
+        <h2 class="pw-section-title pw-no">Noes <span class="pw-section-count">{{ noes | length }}</span></h2>
+        <ul class="pw-voter-list">
+          {% for v in noes %}
+          <li>
+            <a class="pw-link" href="/publicwhip/mp/{{ v.member_id }}">{{ v.name }}</a>
+            <a class="pw-contact-mp pw-contact-mp--compact"
+               href="https://www.writetothem.com/"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Contact this MP via WriteToThem"
+               aria-label="Contact {{ v.name }} via WriteToThem">
+              <span class="pw-contact-logo" aria-hidden="true">MP</span>
+              <span>Contact</span>
+            </a>
+            <span class="pw-muted">{{ v.constituency }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <div class="pw-bluebox">
+    <h3>About the Project</h3>
+    <p>Public Whip helped pioneer open parliamentary vote analysis in the UK.
+    It is a not-for-profit, open source project.
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">Visit publicwhip.org.uk →</a></p>
+    <p>This view uses UK Parliament open data API records only.</p>
+  </div>
+  <footer class="pw-footer">
+    Data sourced from the UK Parliament open data API. Public record only.
+    <span class="pw-footer-sep">·</span>
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">publicwhip.org.uk</a>
+  </footer>
+</div>
+<link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+<script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+<script>
+(function () {
+  // When loaded inside panel_test iframe, notify the parent to visualise this division.
+  // Fires only if there is a real parent frame (not a top-level page load).
+  if (window.parent === window) return;
+  try {
+    window.parent.postMessage(
+      { type: 'mygov:source:division-selected', division_id: {{ meta.division_id | int }} },
+      window.location.origin
+    );
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

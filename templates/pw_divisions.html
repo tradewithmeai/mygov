@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Public Whip - Divisions</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep"> | </span>
+    Public parliamentary records
+    <span class="pw-identity-sep"> | </span>
+    Inspired by Public Whip-style civic data browsing
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link pw-nav-current">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <h1 data-explainable="true" data-explain-type="section" data-context="divisions-index">Divisions</h1>
+    <p class="pw-muted">
+      Click a division to visualise the result on the map in the left pane.
+    </p>
+
+    <section class="pw-section">
+      <table class="pw-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Subject</th>
+            <th class="pw-num-col">Ayes</th>
+            <th class="pw-num-col">Noes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in divisions %}
+          <tr data-lens-division-id="{{ d.division_id }}"
+              data-explainable="true"
+              data-explain-type="division"
+              data-division-id="{{ d.division_id }}">
+            <td class="pw-muted" style="white-space:nowrap">{{ (d.division_date or '')[:10] }}</td>
+            <td><a class="pw-link" href="/publicwhip/division/{{ d.division_id }}" data-lens-division-id="{{ d.division_id }}">{{ d.title or 'Untitled division' }}</a></td>
+            <td class="pw-num-col pw-aye">{{ d.aye_count or '--' }}</td>
+            <td class="pw-num-col pw-no">{{ d.no_count or '--' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+  <link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+</div>
+</body>
+</html>

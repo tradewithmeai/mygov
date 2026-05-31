@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="{{ active_locale }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Civic Lens · MyGov</title>
+  <meta name="description" content="A 3D feasibility globe showing where MyGov-style civic explainers could be built next.">
+  <link rel="stylesheet" href="/static/global_globe.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+</head>
+<body>
+<main class="global-shell"
+      data-feasibility-url="/api/global/feasibility"
+      data-static-data="/static/data/global_feasibility.json{% if asset_version %}?v={{ asset_version }}{% endif %}"
+      data-active-cc="{{ active_cc }}"
+      data-locale="{{ active_locale }}">
+  <header class="global-hero" aria-label="Global Civic Lens introduction">
+    <div class="hero-copy">
+      <p class="eyebrow">MyGov · country-adapter feasibility</p>
+      <h1>Global Civic Lens</h1>
+      <p class="hero-subtitle">{{ t('global_hero_subtitle') }}</p>
+      <p class="hero-note">{{ t('global_hero_note') }}</p>
+    </div>
+    <nav class="hero-actions" aria-label="Global Lens navigation">
+      <a href="/?lang={{ active_locale }}" class="nav-pill">{{ t('back_to_mygov') }}</a>
+      <a href="/source-lens?lang={{ active_locale }}" class="nav-pill">{{ t('open_source_lens') }}</a>
+    </nav>
+  </header>
+
+  <section class="stats-strip" aria-label="Feasibility summary">
+    <article class="stat-card live">
+      <span class="stat-value" id="stat-live">0</span>
+      <span class="stat-label">{{ t('stat_completed') }}</span>
+    </article>
+    <article class="stat-card green">
+      <span class="stat-value" id="stat-green">0</span>
+      <span class="stat-label">{{ t('stat_strong') }}</span>
+    </article>
+    <article class="stat-card orange">
+      <span class="stat-value" id="stat-orange">0</span>
+      <span class="stat-label">{{ t('stat_possible') }}</span>
+    </article>
+    <article class="stat-card red">
+      <span class="stat-value" id="stat-red">0</span>
+      <span class="stat-label">not build-ready</span>
+    </article>
+    <article class="stat-card unmapped">
+      <span class="stat-value" id="stat-unmapped">0</span>
+      <span class="stat-label">{{ t('stat_not_mapped') }}</span>
+    </article>
+    <article class="stat-card total">
+      <span class="stat-value" id="stat-total">0</span>
+      <span class="stat-label">countries mapped</span>
+    </article>
+  </section>
+
+  <section class="global-layout">
+    <section class="globe-panel" aria-label="Interactive 3D world globe">
+      <div class="globe-topline">
+        <div>
+          <p class="eyebrow">Click a country</p>
+          <h2>See whether MyGov can be built there</h2>
+        </div>
+        <div class="globe-controls">
+          <div class="globe-search" id="country-search-wrap">
+            <label class="sr-only" for="country-search-input">Search country</label>
+            <input id="country-search-input" type="search" placeholder="Search countries..." autocomplete="off" spellcheck="false" aria-label="Search countries">
+            <div id="country-search-results" class="country-search-results" hidden></div>
+          </div>
+          <div class="globe-controls-note">Drag to rotate · Scroll to zoom</div>
+        </div>
+      </div>
+
+      <div id="globe-stage" class="globe-stage" tabindex="0" role="application" aria-label="3D feasibility globe with plus markers for every country">
+        <div id="globe-loading" class="globe-loading" role="status">Loading feasibility globe...</div>
+        <div id="global-tooltip" class="global-tooltip" hidden></div>
+      </div>
+
+      <div class="legend" aria-label="Feasibility legend">
+        <button type="button" class="legend-filter" data-filter="live"><i class="legend-swatch live"></i>Completed & live adapter</button>
+        <button type="button" class="legend-filter" data-filter="green"><i class="legend-swatch green"></i>Green: clear pass / strong candidate</button>
+        <button type="button" class="legend-filter" data-filter="orange"><i class="legend-swatch orange"></i>Orange: possible but requires work</button>
+        <button type="button" class="legend-filter" data-filter="red"><i class="legend-swatch red"></i>Red: currently unavailable or insufficient verified data</button>
+      </div>
+    </section>
+
+    <aside class="country-panel" aria-live="polite" aria-label="Selected country details">
+      <div class="country-card" id="country-card">
+        <p class="eyebrow">Selected country</p>
+        <h2 id="country-name">United Kingdom</h2>
+        <div class="status-line">
+          <span class="status-dot green" id="status-dot"></span>
+          <span id="country-status">Working UK adapter</span>
+        </div>
+        <p id="country-summary" class="country-summary">The UK Source Lens is already the working reference adapter for MyGov.</p>
+
+        <dl class="country-meta">
+          <div>
+            <dt>Readiness</dt>
+            <dd id="country-tier">Ready/Pilot</dd>
+          </div>
+          <div>
+            <dt>Confidence</dt>
+            <dd id="country-confidence">high</dd>
+          </div>
+          <div>
+            <dt>Report score</dt>
+            <dd id="country-score">95</dd>
+          </div>
+        </dl>
+
+        <div class="detail-section">
+          <h3>What data exists?</h3>
+          <ul id="available-data" class="chip-list"></ul>
+        </div>
+
+        <div class="detail-section">
+          <h3>What is missing?</h3>
+          <ul id="missing-data" class="plain-list"></ul>
+        </div>
+
+        <div class="next-action">
+          <span>Likely next adapter work</span>
+          <strong id="next-action">Use as the reference adapter for future country implementations.</strong>
+          <a id="country-open-lens"
+             href="/source-lens?cc=GB&source=lens&lang={{ active_locale }}"
+             class="nav-pill secondary"
+             hidden>Open UK Source Lens</a>
+        </div>
+
+        <p class="caveat">This is feasibility, not a political score. It measures whether source-linked civic data is usable enough to build a MyGov-style explainer.</p>
+      </div>
+      <div class="country-list-card" id="country-list-card" hidden>
+        <p class="eyebrow">Filtered countries</p>
+        <h2 id="filter-title">Countries</h2>
+        <p id="filter-meta" class="country-summary"></p>
+        <div id="filter-list" class="country-filter-list" role="listbox" aria-label="Filtered country list"></div>
+        <button type="button" id="filter-back" class="nav-pill secondary filter-back-btn">Back to selected country</button>
+      </div>
+    </aside>
+  </section>
+
+  <section class="adapter-note" aria-label="Adapter architecture note">
+    <p><strong>Adapter logic:</strong> the UK map shows working parliamentary records now. The globe shows future country-adapter readiness: representative data, votes, debate text, boundaries, source links, licence clarity, and risk caveats.</p>
+    <p class="hard-caveat">/global is a feasibility globe. It does not claim MyGov currently supports every country.</p>
+  </section>
+</main>
+
+<noscript>
+  <div class="noscript-warning">This 3D globe needs JavaScript. The static feasibility data is available at <code>/static/data/global_feasibility.json</code>.</div>
+</noscript>
+
+<script type="module" src="/static/global_globe.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+</body>
+</html>
+

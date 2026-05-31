@@ -1,0 +1,270 @@
+/* Explain Mode — toggle button, selection overlay, drawer */
+
+/* Toggle button injected by explain-mode.js */
+#explain-mode-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9000;
+  background: #1e3a5f;
+  color: #7dd3fc;
+  border: 1px solid #2a5a8f;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: background 0.15s, color 0.15s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  letter-spacing: 0.3px;
+}
+#explain-mode-btn:hover {
+  background: #2a5a8f;
+}
+#explain-mode-btn.active {
+  background: #7dd3fc;
+  color: #07090f;
+  border-color: #7dd3fc;
+}
+
+/* Selection cursor when explain mode is on */
+body.explain-mode-on [data-explainable] {
+  cursor: help;
+  outline: 2px dashed rgba(125,211,252,0.65);
+  outline-offset: 3px;
+  transition: outline-color 0.1s, background 0.1s;
+}
+body.explain-mode-on [data-explainable]:hover {
+  outline-color: #7dd3fc;
+  background: rgba(125,211,252,0.08);
+}
+
+/* Hint bar shown when mode is active */
+#explain-mode-hint {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
+  background: rgba(7, 12, 22, 0.92);
+  border: 1px solid rgba(125,211,252,0.45);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #bae6fd;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  max-width: min(720px, calc(100vw - 24px));
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+body.explain-mode-on #explain-mode-hint {
+  display: block;
+}
+
+/* Side drawer */
+#explain-drawer {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  height: 100vh;
+  background: #0b1628;
+  border-left: 1px solid #1e3a5f;
+  z-index: 9100;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: right 0.25s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+}
+#explain-drawer.open {
+  right: 0;
+}
+
+#explain-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #1e3a5f;
+  flex-shrink: 0;
+}
+#explain-drawer-header .drawer-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+#explain-drawer-close {
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+#explain-drawer-close:hover {
+  color: #94a3b8;
+}
+
+#explain-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.explain-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.explain-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #334155;
+}
+.explain-section-body {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+.explain-section-body.muted {
+  color: #475569;
+  font-style: italic;
+}
+.explain-section-body.loading {
+  color: #334155;
+  font-style: italic;
+}
+
+.explain-clicked-text {
+  font-size: 12px;
+  color: #64748b;
+  background: #111827;
+  border: 1px solid #1e2d4a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Follow-up suggestions */
+.explain-followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.explain-followup-chip {
+  background: #111827;
+  color: #7dd3fc;
+  border: 1px solid #1e3a5f;
+  border-radius: 14px;
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.explain-followup-chip:hover {
+  background: #1e3a5f;
+}
+
+/* Follow-up input area */
+#explain-drawer-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #1e2d4a;
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+}
+#explain-followup-input {
+  flex: 1;
+  background: #111827;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  color: #e8eaf0;
+  font-size: 12px;
+  padding: 8px 12px;
+  outline: none;
+  font-family: inherit;
+}
+#explain-followup-input:focus {
+  border-color: #7dd3fc;
+}
+#explain-followup-ask {
+  background: #1e3a5f;
+  color: #7dd3fc;
+  border: 1px solid #2a5a8f;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+#explain-followup-ask:hover {
+  background: #2a5a8f;
+}
+
+/* Level switcher bar */
+#explain-level-bar {
+  display: flex;
+  flex-shrink: 0;
+  padding: 8px 20px;
+  gap: 6px;
+  border-bottom: 1px solid #1e2d4a;
+  background: #0b1628;
+}
+.explain-level-btn {
+  flex: 1;
+  background: #111827;
+  color: #475569;
+  border: 1px solid #1e2d4a;
+  border-radius: 6px;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.explain-level-btn:hover {
+  background: #1e2d4a;
+  color: #94a3b8;
+}
+.explain-level-btn.active {
+  background: #1e3a5f;
+  color: #7dd3fc;
+  border-color: #2a5a8f;
+}
+
+/* Drawer backdrop dimmer */
+#explain-drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 9050;
+}
+#explain-drawer-backdrop.visible {
+  display: block;
+}
+
+/* Responsive: full-width on narrow viewports */
+@media (max-width: 440px) {
+  #explain-drawer {
+    width: 100vw;
+    right: -100vw;
+  }
+}

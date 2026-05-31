@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyGov — Search or Source Lens?</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #07090f;
+    color: #e8eaf0;
+    min-height: 100vh;
+  }
+
+  /* ── Nav ── */
+  .topbar {
+    display: flex; align-items: center; gap: 20px;
+    padding: 14px 24px; border-bottom: 1px solid #1a2438;
+    font-size: 13px;
+  }
+  .topbar-brand { color: #7dd3fc; text-decoration: none; font-weight: 700; }
+  .topbar-brand:hover { text-decoration: underline; }
+  .topbar-sep { color: #1e2d4a; }
+  .topbar-badge {
+    margin-left: auto;
+    background: #0f1c2e; color: #7dd3fc; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px;
+    border: 1px solid #1e3a5f;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 64px 24px 48px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .hero-status {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #38bdf8;
+    background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2);
+    padding: 5px 14px; margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 5vw, 42px);
+    font-weight: 800; color: #fff; line-height: 1.15;
+    margin-bottom: 18px;
+  }
+  .hero-sub {
+    font-size: 16px; color: #94a3b8; line-height: 1.6;
+    max-width: 520px; margin: 0 auto;
+  }
+
+  /* ── Cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px 56px;
+  }
+
+  .card {
+    background: #0d1424;
+    border: 1px solid #1a2438;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .card.a { border-top: 3px solid #2563eb; }
+  .card.b { border-top: 3px solid #8bac35; }
+
+  .card-shot {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #0b1220;
+    position: relative;
+    border-bottom: 1px solid #1a2438;
+  }
+  .card-shot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+
+  .card-body {
+    padding: 28px 24px 20px;
+    flex: 1; display: flex; flex-direction: column; gap: 18px;
+  }
+  .card-label {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.14em; margin-bottom: 4px;
+  }
+  .card.a .card-label { color: #93c5fd; }
+  .card.b .card-label { color: #bfd87a; }
+
+  .card-body h2 { font-size: 22px; font-weight: 800; color: #fff; }
+  .card-desc { font-size: 14px; color: #64748b; line-height: 1.65; }
+
+  .steps {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 4px;
+  }
+  .steps li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: #94a3b8; line-height: 1.45;
+  }
+  .steps li::before {
+    content: "";
+    flex-shrink: 0;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+  }
+  .card.a .steps li::before { background: #2563eb; }
+  .card.b .steps li::before { background: #8bac35; }
+
+  .card-cta {
+    padding: 20px 24px;
+    border-top: 1px solid #1a2438;
+  }
+  .btn {
+    display: block; text-align: center;
+    padding: 14px 20px; font-size: 15px; font-weight: 700;
+    text-decoration: none; letter-spacing: 0.01em;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.87; }
+  .btn-a { background: #2563eb; color: #fff; }
+  .btn-b { background: #8bac35; color: #fff; }
+
+  /* ── Feedback ── */
+  .feedback-wrap {
+    max-width: 1000px; margin: 0 auto 48px;
+    padding: 0 24px;
+  }
+  .feedback {
+    background: #0d1424; border: 1px solid #1a2438;
+    padding: 32px 28px;
+    display: flex; flex-wrap: wrap; align-items: flex-start;
+    gap: 24px;
+  }
+  .feedback-text { flex: 1; min-width: 220px; }
+  .feedback-text h3 {
+    font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 8px;
+  }
+  .feedback-text p {
+    font-size: 13px; color: #64748b; line-height: 1.55;
+  }
+  .feedback-action { display: flex; align-items: flex-start; }
+  .btn-feedback {
+    display: inline-block; padding: 12px 24px;
+    font-size: 14px; font-weight: 700;
+    background: transparent; color: #38bdf8;
+    border: 1px solid #38bdf8;
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-feedback:hover { background: rgba(56,189,248,0.08); }
+
+  /* ── Footer ── */
+  .page-footer {
+    text-align: center; padding: 32px 24px 48px;
+    font-size: 12px; color: #334155;
+    border-top: 1px solid #111827;
+    max-width: 1000px; margin: 0 auto;
+  }
+  .page-footer a { color: #475569; text-decoration: none; }
+  .page-footer a:hover { color: #7dd3fc; }
+  .page-footer .sep { margin: 0 10px; color: #1e2d4a; }
+
+  @media (max-width: 640px) {
+    .hero { padding: 40px 20px 32px; }
+    .cards { padding: 0 16px 40px; gap: 20px; }
+    .card-shot { height: 160px; }
+    .card-body { padding: 22px 18px 16px; }
+    .card-cta { padding: 16px 18px; }
+    .feedback { padding: 24px 20px; }
+    .feedback-wrap { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="topbar-brand" href="/">&larr; MyGov</a>
+  <span class="topbar-sep">·</span>
+  <span style="color:#475569">User test</span>
+  <span class="topbar-badge">Live MVP</span>
+</nav>
+
+<header class="hero">
+  <div class="hero-status">Live MVP test &middot; built with UK Parliament data</div>
+  <h1>Two ways to see how your MP voted.</h1>
+  <p class="hero-sub">Option A starts with your MP. Option B starts with the actual vote record — then shows every MP on a map. Try both and tell us which one is clearer.</p>
+</header>
+
+<div class="cards">
+
+  <!-- A: Search bar -->
+  <div class="card a">
+    <div class="card-shot">
+      <img src="/static/screenshots/ab2-search.png"
+           alt="MyGov search bar — type an MP name or constituency"
+           loading="eager">
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="card-label">A &middot; Search-first</div>
+        <h2>Search for your MP</h2>
+      </div>
+      <p class="card-desc">Type a name or constituency. Open the MP profile to see their votes, questions in Parliament, and plain-English explanations.</p>
+      <ul class="steps">
+        <li>Search an MP name or constituency</li>
+        <li>Read their voting record and questions asked</li>
+        <li>Use Explain Mode for plain English context</li>
+      </ul>
+    </div>
+    <div class="card-cta">
+      <a href="/" class="btn btn-a" id="cta-search">Try search-first &rarr;</a>
+    </div>
+  </div>
+
+  <!-- B: Source Lens with clone site -->
+  <div class="card b">
+    <div class="card-shot">
+      <img src="/static/screenshots/ab2-panel.png"
+           alt="MyGov Source Lens — constituency map alongside the Public Whip vote record"
+           loading="eager">
+    </div>
+    <div class="card-body">
+      <div>
+        <div class="card-label">B &middot; Source Lens</div>
+        <h2>Browse the vote record</h2>
+      </div>
+      <p class="card-desc">Browse real parliamentary division records — the same data Public Whip made famous. Pick a vote, and the map recolours every constituency Aye or No.</p>
+      <ul class="steps">
+        <li>Browse live division records on the right</li>
+        <li>Click a vote — map recolours by Aye / No</li>
+        <li>Search an MP to highlight their seat</li>
+      </ul>
+    </div>
+    <div class="card-cta">
+      <a href="/panel_test" class="btn btn-b" id="cta-panel">Try Source Lens &rarr;</a>
+    </div>
+  </div>
+
+</div>
+
+<div class="feedback-wrap">
+  <div class="feedback">
+    <div class="feedback-text">
+      <h3>After trying both — which made the record easier to understand?</h3>
+      <p>Your answer helps us decide which direction to develop first. No login, no tracking.</p>
+    </div>
+    <div class="feedback-action">
+      <a href="mailto:captain@solvx.uk?subject=MyGov%20feedback%20(AB2)&body=I%20tried%20both%20routes.%20The%20one%20that%20made%20Parliament%20easier%20to%20understand%20was%3A%0A%0A(A%20-%20Search-first%20%2F%20B%20-%20Source%20Lens%20with%20vote%20record%20%2F%20not%20sure%20yet)%0A%0AHere%27s%20why%3A%0A"
+         class="btn-feedback">Give feedback &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<footer class="page-footer">
+  Built on UK Parliament open data only — no spin, no press releases.
+  <br style="margin-bottom:10px">
+  <a href="/">MyGov search</a>
+  <span class="sep">·</span>
+  <a href="/panel_test">Source Lens</a>
+  <span class="sep">·</span>
+  <a href="/publicwhip">Vote records</a>
+  <span class="sep">·</span>
+  <a href="/ab_search_vs_lens">Other A/B test</a>
+</footer>
+
+<script>
+(function () {
+  function tel(event, props) {
+    try {
+      fetch('/api/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ event: event }, props || {}))
+      });
+    } catch (_) {}
+  }
+
+  tel('ab_search_vs_panel_viewed');
+
+  document.getElementById('cta-search').addEventListener('click', function () {
+    tel('search_variant_clicked', { page: 'ab_search_vs_panel' });
+  });
+  document.getElementById('cta-panel').addEventListener('click', function () {
+    tel('panel_variant_clicked', { page: 'ab_search_vs_panel' });
+  });
+})();
+</script>
+
+</body>
+</html>

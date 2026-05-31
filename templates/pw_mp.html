@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ mp.name }} — PublicWhip</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep">·</span>
+    Public parliamentary records
+    <span class="pw-identity-sep">·</span>
+    Inspired by Public Whip-style civic data browsing
+    <span class="pw-identity-sep">·</span>
+    <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link pw-nav-current">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+      <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <nav class="pw-breadcrumb">
+      <a class="pw-link" href="/publicwhip">PublicWhip</a>
+      <span class="pw-sep-bc">/</span>
+      <span>{{ mp.name }}</span>
+    </nav>
+
+    <section class="pw-mp-profile">
+      {% if thumbnail %}
+      <img class="pw-mp-photo" src="{{ thumbnail }}" alt="{{ mp.name }}" loading="lazy">
+      {% else %}
+      <div class="pw-mp-photo pw-mp-photo--placeholder">{{ mp.name[0] }}</div>
+      {% endif %}
+      <div class="pw-mp-info">
+        <div class="pw-party-dot" style="background:{{ party_colour }}"></div>
+        <div class="pw-mp-name-row">
+          <h1 class="pw-mp-name"
+              data-explainable="true"
+              data-explain-type="section"
+              data-context="mp-name">{{ mp.name }}</h1>
+          <a class="pw-contact-mp"
+             href="https://www.writetothem.com/"
+             target="_blank"
+             rel="noopener noreferrer"
+             title="Contact this MP via WriteToThem"
+             aria-label="Contact {{ mp.name }} via WriteToThem">
+            <span class="pw-contact-logo" aria-hidden="true">MP</span>
+            <span>Contact</span>
+          </a>
+        </div>
+        <p class="pw-mp-meta">{{ mp.party or 'Unknown party' }} · {{ mp.constituency or 'Unknown constituency' }}</p>
+        <div class="pw-stats-row">
+          <div class="pw-stat">
+            <span class="pw-stat-val">{{ votes_taken }}</span>
+            <span class="pw-stat-label">votes recorded</span>
+          </div>
+          <div class="pw-stat pw-stat--aye">
+            <span class="pw-stat-val">{{ aye_count }}</span>
+            <span class="pw-stat-label">Aye</span>
+          </div>
+          <div class="pw-stat pw-stat--no">
+            <span class="pw-stat-val">{{ no_count }}</span>
+            <span class="pw-stat-label">No</span>
+          </div>
+          {% if rebellion_count > 0 %}
+          <div class="pw-stat pw-stat--rebel">
+            <span class="pw-stat-val">{{ rebellion_count }}</span>
+            <span class="pw-stat-label">rebellions</span>
+          </div>
+          {% endif %}
+        </div>
+        <a class="pw-cta-link" href="/mp/{{ mp.member_id }}">View full MyGov profile &rarr;</a>
+      </div>
+    </section>
+
+    <section class="pw-section">
+      <h2 class="pw-section-title" data-explainable="true" data-explain-type="section" data-context="mp-vote-history">Vote history <span class="pw-section-count">{{ votes_taken }}</span></h2>
+      <table class="pw-table">
+        <thead>
+          <tr>
+            <th>Division</th>
+            <th class="pw-num-col">Date</th>
+            <th class="pw-num-col">Vote</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in votes %}
+          <tr{% if v.division_id in rebellions %} class="pw-rebel-row"{% endif %}
+              data-explainable="true"
+              data-explain-type="vote"
+              data-member-id="{{ mp.member_id }}"
+              data-division-id="{{ v.division_id }}">
+            <td>
+              <a class="pw-link" href="/publicwhip/division/{{ v.division_id }}">{{ v.title or 'Untitled division' }}</a>
+              {% if v.division_id in rebellions %}<span class="pw-rebel-badge">rebellion</span>{% endif %}
+            </td>
+            <td class="pw-num-col pw-muted">{{ (v.division_date or '')[:10] }}</td>
+            <td class="pw-num-col {% if v.voted_aye == 1 %}pw-aye{% else %}pw-no{% endif %}">
+              {{ 'Aye' if v.voted_aye == 1 else 'No' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <div class="pw-bluebox">
+    <h3>About the Project</h3>
+    <p>Public Whip helped pioneer open parliamentary vote analysis in the UK.
+    It is a not-for-profit, open source project.
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">Visit publicwhip.org.uk →</a></p>
+    <p>This view uses UK Parliament open data API records only.</p>
+  </div>
+  <footer class="pw-footer">
+    Data sourced from the UK Parliament open data API. Public record only.
+    <span class="pw-footer-sep">·</span>
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">publicwhip.org.uk</a>
+  </footer>
+</div>
+<link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+<script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+<script>
+(function () {
+  if (window.parent === window) return;
+  try {
+    window.parent.postMessage({
+      type: 'mygov:source:mp-selected',
+      member_id: {{ mp.member_id | int }},
+      name: {{ mp.name | tojson }},
+      party: {{ (mp.party or '') | tojson }},
+      constituency: {{ (mp.constituency or '') | tojson }}
+    }, window.location.origin);
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

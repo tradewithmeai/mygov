@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PublicWhip Family Mirror — MyGov</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">MyGov</a>
+      <span class="kicker">Lens family</span>
+      <div class="spacer"></div>
+      <a href="/lens">Lens</a>
+      <a href="/map">Map</a>
+      <a href="/compare">Compare</a>
+    </header>
+
+    <main class="layout">
+      <section class="intro">
+        <p class="eyebrow">PublicWhip family mirror</p>
+        <h1>PublicWhip is now part of the MyGov source family.</h1>
+        <p class="lede">
+          In local development, this page can embed your running PublicWhip mirror.
+          On Vercel, it stays deployable and keeps the family together with a safe
+          fallback view and direct links back to the original source.
+        </p>
+
+        <div class="notice-grid">
+          <article class="notice-card">
+            <h2>Local mirror</h2>
+            <p>When <code>PUBLICWHIP_EMBED_URL</code> is set, this page frames that mirror here.</p>
+          </article>
+          <article class="notice-card">
+            <h2>Deploy-safe fallback</h2>
+            <p>If the mirror is not available, the page still renders a clear family view on Vercel.</p>
+          </article>
+          <article class="notice-card">
+            <h2>Source respect</h2>
+            <p>We keep PublicWhip separate, linked, and caveated. No scraping claims, no ownership claims.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="viewer">
+        <div class="viewer-head">
+          <div>
+            <p class="viewer-label">PublicWhip view</p>
+            <h2>Embedded mirror or fallback card</h2>
+          </div>
+          <a class="external-link" href="{{ external_url }}" target="_blank" rel="noopener noreferrer">
+            Open original site ↗
+          </a>
+        </div>
+
+        <div class="frame-shell">
+          {% if embed_url %}
+          <iframe
+            id="publicwhip-iframe"
+            title="PublicWhip mirror"
+            src="{{ embed_url }}"
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          ></iframe>
+          <div id="publicwhip-loading" class="overlay visible">
+            <div class="spinner"></div>
+            <p>Loading PublicWhip mirror…</p>
+          </div>
+          <div id="publicwhip-fallback" class="overlay fallback">
+            <div class="fallback-card">
+              <div class="fallback-icon">🔒</div>
+              <h3>PublicWhip mirror is unavailable</h3>
+              <p>
+                The deploy-safe MyGov family page is still available, but the local mirror
+                did not load in time. Open the original site, or set
+                <code>PUBLICWHIP_EMBED_URL</code> locally to frame the mirror.
+              </p>
+              <a class="button" href="{{ external_url }}" target="_blank" rel="noopener noreferrer">
+                Open original site
+              </a>
+            </div>
+          </div>
+          {% else %}
+          <div id="publicwhip-fallback" class="overlay fallback visible">
+            <div class="fallback-card">
+              <div class="fallback-icon">📘</div>
+              <h3>Deploy-safe family page</h3>
+              <p>
+                PublicWhip is part of the MyGov family here, but the local mirror is not
+                configured in this deployment. The page stays useful and deployable on Vercel.
+              </p>
+              <ul class="source-list">
+                <li><strong>Purpose:</strong> parliamentary votes and record-keeping</li>
+                <li><strong>Local mirror:</strong> set <code>PUBLICWHIP_EMBED_URL</code> to embed it</li>
+                <li><strong>External source:</strong> link to the original PublicWhip site above</li>
+              </ul>
+              <a class="button" href="{{ external_url }}" target="_blank" rel="noopener noreferrer">
+                Open original site
+              </a>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+(function () {
+  var iframe = document.getElementById('publicwhip-iframe');
+  var loading = document.getElementById('publicwhip-loading');
+  var fallback = document.getElementById('publicwhip-fallback');
+  if (!iframe || !loading || !fallback) return;
+
+  var timer = window.setTimeout(function () {
+    loading.classList.remove('visible');
+    fallback.classList.add('visible');
+  }, 20000);
+
+  iframe.addEventListener('load', function () {
+    window.clearTimeout(timer);
+    loading.classList.remove('visible');
+    fallback.classList.remove('visible');
+    iframe.classList.add('ready');
+  });
+})();
+</script>
+</body>
+</html>

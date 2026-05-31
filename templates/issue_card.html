@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ member['name'] }} on {{ topic }} — MyGov</title>
+
+<meta property="og:title" content="{{ member['name'] }} on {{ topic }}">
+<meta property="og:description" content="{{ member['party'] }} MP for {{ member['constituency'] }}{% if spotlight %} — {{ spotlight.aye }} Aye / {{ spotlight.no }} No across {{ spotlight.total }} recorded divisions on {{ topic }}{% endif %}. Public record via Parliament's open APIs.">
+<meta property="og:url" content="{{ live_url }}/mp/{{ member['member_id'] }}/issue/{{ slug }}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ member['name'] }} on {{ topic }}">
+<meta name="twitter:description" content="{{ spotlight.aye }} Aye / {{ spotlight.no }} No across {{ spotlight.total }} divisions — public record via Parliament APIs.">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #07090f; color: #e8eaf0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 32px 16px 64px;
+  }
+
+  .topbar {
+    width: 100%; max-width: 700px; display: flex; align-items: center;
+    gap: 16px; margin-bottom: 28px;
+  }
+  .topbar a { color: #7dd3fc; text-decoration: none; font-size: 14px; }
+  .topbar a:hover { text-decoration: underline; }
+
+  .card {
+    width: 100%; max-width: 680px;
+    background: #111827; border: 1px solid #1e2d4a; border-radius: 20px;
+    padding: 32px; position: relative; overflow: hidden;
+  }
+  .card-accent {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: {{ party_colour }};
+  }
+
+  .card-header { margin-bottom: 24px; }
+  .card-header h1 { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .card-topic {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: {{ party_colour }}; margin-bottom: 4px;
+  }
+  .card-meta { font-size: 13px; color: #64748b; }
+
+  .vote-summary { margin-bottom: 24px; }
+  .vote-summary-label { font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .bar-wrap { height: 12px; border-radius: 6px; background: #450a0a; overflow: hidden; margin-bottom: 8px; }
+  .bar-fill { height: 100%; border-radius: 6px; background: #16a34a; }
+  .bar-counts { display: flex; gap: 20px; font-size: 14px; font-weight: 700; }
+  .bar-counts .aye { color: #86efac; }
+  .bar-counts .no  { color: #fca5a5; }
+  .bar-counts .total { color: #475569; font-size: 12px; font-weight: 400; align-self: center; }
+
+  .votes-list { margin-bottom: 28px; }
+  .votes-list-label { font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .issue-vote-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #0f172a;
+  }
+  .issue-vote-pill {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .issue-vote-pill.aye { background: #14532d; color: #86efac; }
+  .issue-vote-pill.no  { background: #450a0a; color: #fca5a5; }
+  .issue-vote-text { flex: 1; }
+  .issue-vote-title { font-size: 13px; color: #cbd5e1; line-height: 1.4; }
+  .issue-vote-date  { font-size: 11px; color: #475569; margin-top: 2px; }
+  .issue-vote-source { font-size: 11px; color: #334155; margin-top: 2px; }
+  .issue-vote-source a { color: #334155; }
+  .issue-vote-source a:hover { color: #7dd3fc; }
+  .explain-snippet {
+    margin-top: 6px; font-size: 12px; color: #7dd3fc; font-style: italic;
+    line-height: 1.5; display: none;
+  }
+  .explain-card-btn {
+    font-size: 11px; padding: 2px 10px; cursor: pointer; margin-top: 6px;
+    background: #0f2137; color: #7dd3fc; border: 1px solid #1e3a5f;
+    border-radius: 12px; display: inline-block;
+  }
+  .explain-card-btn:hover { background: #1e3a5f; }
+
+  .card-footer {
+    border-top: 1px solid #1e2d4a; padding-top: 16px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;
+  }
+  .card-footer-source { font-size: 11px; color: #334155; line-height: 1.5; }
+  .card-footer-source a { color: #475569; }
+  .back-link {
+    font-size: 13px; color: #7dd3fc; text-decoration: none;
+    border: 1px solid #1e3a5f; padding: 6px 16px; border-radius: 8px;
+  }
+  .back-link:hover { background: #0f2137; }
+
+  .download-btn {
+    display: block; width: 100%; margin-top: 20px; padding: 14px;
+    background: #2563eb; color: #fff; font-size: 14px; font-weight: 700;
+    border: none; border-radius: 10px; cursor: pointer; text-align: center;
+    transition: background 0.15s;
+  }
+  .download-btn:hover { background: #1d4ed8; }
+  .download-btn:disabled { background: #1e2d4a; color: #475569; cursor: not-allowed; }
+
+  .ai-disclaimer {
+    font-size: 11px; color: #334155; font-style: italic;
+    margin-top: 12px; padding: 8px 12px; border: 1px dashed #1e2d4a; border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/mp/{{ member['member_id'] }}">&larr; Back to {{ member['name'] }}</a>
+</div>
+
+<div class="card" id="accountability-card">
+  <div class="card-accent"></div>
+
+  <div class="card-header">
+    <div class="card-topic">{{ topic }}</div>
+    <h1>{{ member['name'] }}</h1>
+    <div class="card-meta">{{ member['party'] }} · {{ member['constituency'] }}</div>
+  </div>
+
+  {% if spotlight %}
+  <div class="vote-summary">
+    <div class="vote-summary-label">Voting record on {{ topic }}</div>
+    {% set pct = (spotlight.aye / spotlight.total * 100)|int if spotlight.total > 0 else 0 %}
+    <div class="bar-wrap">
+      <div class="bar-fill" style="width: {{ pct }}%"></div>
+    </div>
+    <div class="bar-counts">
+      <span class="aye">{{ spotlight.aye }} AYE</span>
+      <span class="no">{{ spotlight.no }} NO</span>
+      <span class="total">{{ spotlight.total }} divisions on record</span>
+    </div>
+  </div>
+
+  {% if spotlight.recent %}
+  <div class="votes-list">
+    <div class="votes-list-label">Most recent divisions</div>
+    {% for v in spotlight.recent %}
+    <div class="issue-vote-row"
+         data-explainable="true"
+         data-explain-type="issue-vote-row"
+         data-member-id="{{ member['member_id'] }}"
+         data-division-id="{{ v['division_id'] }}"
+         data-issue="{{ slug }}"
+         data-source-url="https://votes.parliament.uk/Votes/Commons/Division/{{ v['division_id'] }}">
+      <span class="issue-vote-pill {{ 'aye' if v['voted_aye'] else 'no' }}">{{ 'AYE' if v['voted_aye'] else 'NO' }}</span>
+      <div class="issue-vote-text">
+        <div class="issue-vote-title">{{ v['title'] }}</div>
+        <div class="issue-vote-date">{{ v['division_date'][:10] if v['division_date'] else '' }}</div>
+        <div class="issue-vote-source">
+          Source: <a href="https://votes.parliament.uk/Votes/Commons/Division/{{ v['division_id'] }}" target="_blank" rel="noopener">Parliament division record ↗</a>
+        </div>
+        <div class="explain-snippet" id="esnip-{{ v['division_id'] }}"></div>
+        <button class="explain-card-btn"
+                data-division="{{ v['division_id'] }}"
+                data-member="{{ member['member_id'] }}"
+                id="ebtn-{{ v['division_id'] }}">Explain this vote</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="padding: 24px 0; color: #475569; font-size: 14px;">
+    No divisions matching <strong style="color:#e2e8f0">{{ topic }}</strong> found in the current record for this MP.<br>
+    <span style="font-size:12px;">Division titles are matched by keyword — coverage depends on how Parliament records each vote.</span>
+  </div>
+  {% endif %}
+
+  <div class="card-footer">
+    <div class="card-footer-source">
+      Data source: <a href="https://votes.parliament.uk" target="_blank" rel="noopener">Parliament's open APIs</a><br>
+      Public record only. No editorial judgement.
+    </div>
+    <a href="/mp/{{ member['member_id'] }}" class="back-link">Full profile →</a>
+  </div>
+</div>
+
+<div style="width:100%;max-width:680px;">
+  <button class="download-btn" id="download-btn">Download as PNG</button>
+  <div class="ai-disclaimer">
+    AI explanations are generated from division titles only and are factual summaries — not editorial judgements.
+    Always verify via the Parliament source link before sharing.
+  </div>
+  <div style="margin-top:12px; font-size:12px; color:#475569; text-align:center;">
+    Viewing <strong style="color:#e2e8f0;">Variant {{ variant }}</strong> &nbsp;&middot;&nbsp;
+    <a href="/compare" style="color:#7dd3fc;">See both variants</a> &nbsp;&middot;&nbsp;
+    <a href="mailto:ogtradewithmeai@gmail.com?subject=MyGov A/B Feedback — Variant {{ variant }}&body=I preferred Variant {{ variant }} because..."
+       style="color:#7dd3fc;">Which version was clearer?</a>
+  </div>
+</div>
+
+<link rel="stylesheet" href="/static/explain-mode.css">
+<script src="/static/explain-mode.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+document.querySelectorAll('.explain-card-btn').forEach(function(btn) {
+  btn.addEventListener('click', async function() {
+    var divId = this.dataset.division;
+    var membId = this.dataset.member;
+    var snip = document.getElementById('esnip-' + divId);
+    if (snip.style.display === 'block') {
+      snip.style.display = 'none';
+      return;
+    }
+    snip.style.display = 'block';
+    snip.textContent = 'Loading…';
+    try {
+      var r = await fetch('/api/explain-vote?division_id=' + divId + '&member_id=' + membId);
+      var d = await r.json();
+      snip.textContent = d.explanation || d.error || 'Could not load explanation.';
+    } catch(e) {
+      snip.textContent = 'Network error — please try again.';
+    }
+  });
+});
+
+var dlBtn = document.getElementById('download-btn');
+dlBtn.addEventListener('click', function() {
+  dlBtn.disabled = true;
+  dlBtn.textContent = 'Generating…';
+  var card = document.getElementById('accountability-card');
+  html2canvas(card, {backgroundColor: '#111827', scale: 2, useCORS: true}).then(function(canvas) {
+    var a = document.createElement('a');
+    a.download = 'mygov-' + encodeURIComponent('{{ member["name"] | replace(" ", "-") }}') + '-{{ slug }}.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    dlBtn.disabled = false;
+    dlBtn.textContent = 'Download as PNG';
+  }).catch(function() {
+    dlBtn.disabled = false;
+    dlBtn.textContent = 'Download as PNG';
+  });
+});
+</script>
+
+</body>
+</html>

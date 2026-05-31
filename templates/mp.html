@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ member['name'] }} — MyGov</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0a0f1e; color: #e8eaf0; }
+
+  .topbar {
+    background: #060b16; border-bottom: 1px solid #1e2d4a;
+    padding: 14px 32px; display: flex; align-items: center; gap: 16px;
+  }
+  .topbar a { color: #7dd3fc; text-decoration: none; font-size: 14px; }
+  .topbar a:hover { text-decoration: underline; }
+  .topbar-title { font-weight: 700; font-size: 16px; color: #fff; margin-left: auto; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Profile header */
+  .profile-header {
+    display: flex; align-items: flex-start; gap: 24px; margin-bottom: 40px;
+    background: #111827; border: 1px solid #1e2d4a; border-radius: 16px; padding: 28px;
+  }
+  .party-stripe {
+    width: 6px; min-height: 80px; border-radius: 4px; flex-shrink: 0;
+    background: {{ party_colour }};
+  }
+  .profile-info { flex: 1; }
+  .profile-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .profile-info h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .contact-mp-link {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+    border: 1px solid #2a4a6e; border-radius: 999px; background: #0f2137;
+    color: #7dd3fc; text-decoration: none; font-size: 12px; font-weight: 800;
+  }
+  .contact-mp-link:hover { background: #1e3a5f; text-decoration: none; }
+  .mp-contact-logo {
+    width: 22px; height: 22px; border-radius: 999px; display: inline-flex;
+    align-items: center; justify-content: center; background: #e0f2fe;
+    color: #0f172a; font-size: 9px; font-weight: 900; letter-spacing: -0.03em;
+  }
+  .profile-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+  .tag {
+    background: #1e2d4a; color: #94a3b8; font-size: 12px; font-weight: 600;
+    padding: 4px 12px; border-radius: 20px; border: 1px solid #2a4a6e;
+  }
+  .tag.party { background: #1a2f1a; color: #86efac; border-color: #166534; }
+
+  /* Stats row */
+  .stats-row {
+    display: flex; gap: 16px; margin-bottom: 40px; flex-wrap: wrap;
+  }
+  .stat-card {
+    flex: 1; min-width: 140px; background: #111827; border: 1px solid #1e2d4a;
+    border-radius: 12px; padding: 20px; text-align: center;
+  }
+  .stat-card .num { font-size: 36px; font-weight: 800; color: #7dd3fc; }
+  .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Issue Spotlight */
+  .spotlight-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+    margin-bottom: 8px;
+  }
+  .spotlight-card {
+    background: #111827; border: 1px solid #1e2d4a; border-radius: 12px; padding: 18px;
+  }
+  .spotlight-topic { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }
+  .spotlight-bar {
+    height: 8px; border-radius: 4px; background: #1e2d4a; overflow: hidden; margin-bottom: 8px;
+  }
+  .spotlight-bar-fill {
+    height: 100%; border-radius: 4px; background: #16a34a;
+  }
+  .spotlight-counts { font-size: 12px; color: #475569; display: flex; gap: 12px; }
+  .spotlight-counts .aye-c { color: #86efac; }
+  .spotlight-counts .no-c { color: #fca5a5; }
+  .spotlight-recent { margin-top: 10px; }
+  .spotlight-vote { font-size: 11px; color: #64748b; display: flex; gap: 6px; align-items: flex-start; margin-top: 4px; line-height: 1.4; }
+  .spotlight-vote .pill { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; flex-shrink: 0; margin-top: 1px; }
+  .spotlight-vote .pill.aye { background: #14532d; color: #86efac; }
+  .spotlight-vote .pill.no { background: #450a0a; color: #fca5a5; }
+  .no-spotlight { font-size: 13px; color: #334155; font-style: italic; }
+
+  /* Sections */
+  .section { margin-bottom: 40px; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #1e2d4a;
+  }
+  .section-header h2 { font-size: 16px; font-weight: 700; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .section-header .badge {
+    background: #1e2d4a; color: #7dd3fc; font-size: 11px; padding: 3px 10px; border-radius: 10px;
+  }
+  .source-label { font-size: 11px; color: #334155; }
+
+  /* Vote rows */
+  .vote-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid #0f172a;
+  }
+  .vote-pill {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    min-width: 44px; text-align: center; flex-shrink: 0;
+  }
+  .vote-pill.aye { background: #14532d; color: #86efac; }
+  .vote-pill.no  { background: #450a0a; color: #fca5a5; }
+  .vote-date { font-size: 12px; color: #475569; flex-shrink: 0; width: 90px; }
+  .vote-title { font-size: 13px; color: #cbd5e1; flex: 1; }
+  .vote-counts { font-size: 11px; color: #334155; flex-shrink: 0; }
+  .explain-btn {
+    font-size: 11px; padding: 2px 10px; cursor: pointer; flex-shrink: 0;
+    background: #0f2137; color: #7dd3fc; border: 1px solid #1e3a5f;
+    border-radius: 12px; transition: background 0.15s;
+  }
+  .explain-btn:hover { background: #1e3a5f; }
+  .explain-panel { border-bottom: 1px solid #0f172a; }
+  .explain-panel-inner {
+    background: #0b1628; font-style: italic; padding: 10px 16px;
+    color: #94a3b8; font-size: 13px; line-height: 1.6;
+  }
+  .inline-level-bar {
+    display: flex; gap: 4px; padding: 6px 16px 0;
+    background: #0b1628;
+  }
+  .inline-level-bar .explain-level-btn {
+    flex: 1; background: #111827; color: #475569;
+    border: 1px solid #1e2d4a; border-radius: 5px;
+    padding: 3px 0; font-size: 10px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: background 0.12s, color 0.12s;
+  }
+  .inline-level-bar .explain-level-btn:hover { background: #1e2d4a; color: #94a3b8; }
+  .inline-level-bar .explain-level-btn.active { background: #1e3a5f; color: #7dd3fc; border-color: #2a5a8f; }
+  .inline-summary {
+    font-size: 12px; color: #7dd3fc; font-style: italic;
+    margin-top: 4px; line-height: 1.5; display: block;
+  }
+  .inline-summary.loading { color: #334155; }
+  .vote-title-wrap { flex: 1; display: flex; flex-direction: column; }
+  .card-link {
+    display: inline-block; margin-top: 10px; font-size: 11px; color: #7dd3fc;
+    text-decoration: none; border: 1px solid #1e3a5f; padding: 3px 10px;
+    border-radius: 10px; transition: background 0.15s;
+  }
+  .card-link:hover { background: #0f2137; }
+
+  /* Question rows */
+  .q-row {
+    padding: 12px 0; border-bottom: 1px solid #0f172a;
+  }
+  .q-meta { display: flex; gap: 10px; margin-bottom: 5px; }
+  .q-date { font-size: 12px; color: #475569; }
+  .q-body-tag { font-size: 11px; color: #7dd3fc; background: #0f2137; padding: 2px 8px; border-radius: 10px; }
+  .q-text { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+
+  /* Pledges */
+  .pledge-row {
+    display: flex; align-items: flex-start; gap: 12px; padding: 14px 0;
+    border-bottom: 1px solid #0f172a;
+  }
+  .pledge-status {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .pledge-status.no_record { background: #1e1e1e; color: #475569; border: 1px solid #334155; }
+  .pledge-status.partial { background: #451a03; color: #fdba74; border: 1px solid #92400e; }
+  .pledge-status.matched { background: #14532d; color: #86efac; }
+  .pledge-text { font-size: 13px; color: #cbd5e1; flex: 1; }
+  .pledge-detail { font-size: 12px; color: #475569; margin-top: 3px; }
+  .mock-note {
+    font-size: 11px; color: #334155; font-style: italic; margin-top: 10px;
+    padding: 8px 12px; border: 1px dashed #1e2d4a; border-radius: 6px;
+  }
+
+  /* Coverage panel */
+  .coverage-panel {
+    margin-bottom: 32px; border-radius: 12px; padding: 16px 20px;
+    border: 1px solid; display: flex; flex-direction: column; gap: 6px;
+  }
+  .coverage-panel.coverage-partial {
+    background: #1c1a10; border-color: #713f12; color: #fde68a;
+  }
+  .coverage-panel.coverage-possible_api_mismatch,
+  .coverage-panel.coverage-not_loaded {
+    background: #1a0f0f; border-color: #7f1d1d; color: #fca5a5;
+  }
+  .coverage-title {
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .coverage-msg {
+    font-size: 12px; line-height: 1.6; opacity: 0.85;
+  }
+
+  /* CTA */
+  .cta-bar {
+    background: #0f172a; border: 1px solid #1e3a5f; border-radius: 16px;
+    padding: 32px; text-align: center; margin-top: 48px;
+  }
+  .cta-bar h2 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+  .cta-bar p { font-size: 14px; color: #64748b; margin-bottom: 20px; }
+  .cta-bar a {
+    display: inline-block; padding: 14px 32px; background: #2563eb;
+    color: #fff; font-weight: 700; border-radius: 8px; text-decoration: none;
+    font-size: 15px; transition: background 0.15s;
+  }
+  .cta-bar a:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/">&larr; Back to search</a>
+  <div class="topbar-title">MyGov — Public Records Tracker</div>
+</div>
+
+<div class="page">
+
+  <!-- Profile header -->
+  <div class="profile-header">
+    <div class="party-stripe"></div>
+    <div class="profile-info">
+      <div class="profile-name-row">
+        <h1>{{ member['name'] }}</h1>
+        <a class="contact-mp-link"
+           href="https://www.writetothem.com/"
+           target="_blank"
+           rel="noopener noreferrer"
+           title="Contact this MP via WriteToThem"
+           aria-label="Contact {{ member['name'] }} via WriteToThem">
+          <span class="mp-contact-logo" aria-hidden="true">MP</span>
+          <span>Contact</span>
+        </a>
+      </div>
+      <div class="profile-meta">
+        <span class="tag party">{{ member['party'] }}</span>
+        <span class="tag">{{ member['constituency'] }}</span>
+        <span class="tag">Member ID {{ member['member_id'] }}</span>
+        <span class="tag">House of Commons</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">{{ vote_count }}</div>
+      <div class="label">Votes on record</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ aye_count }}</div>
+      <div class="label">Voted Aye</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ no_count }}</div>
+      <div class="label">Voted No</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ q_count }}</div>
+      <div class="label">Written Questions</div>
+    </div>
+  </div>
+
+  <!-- Coverage panel — shown whenever data is incomplete -->
+  {% if coverage.status != 'good' %}
+  <div class="coverage-panel coverage-{{ coverage.status }}">
+    <div class="coverage-title">📋 Data coverage: {{ coverage.label }}</div>
+    {% if coverage.message %}
+    <div class="coverage-msg">{{ coverage.message }}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Issue Spotlight -->
+  {% if coverage.show_spotlight %}
+  <div class="section">
+    <div class="section-header">
+      <h2>🔍 Issue Spotlight</h2>
+      <span class="source-label">Based on division titles — Parliament API</span>
+    </div>
+    {% if issue_spotlight %}
+    <div class="spotlight-grid">
+      {% for s in issue_spotlight %}
+      <div class="spotlight-card"
+           data-explainable="true"
+           data-explain-type="spotlight-card"
+           data-member-id="{{ member['member_id'] }}"
+           data-issue="{{ topic_to_slug(s.topic) }}">
+        <div class="spotlight-topic">{{ s.topic }}</div>
+        <div class="spotlight-bar">
+          <div class="spotlight-bar-fill" style="width: {{ (s.aye / s.total * 100)|int }}%"></div>
+        </div>
+        <div class="spotlight-counts">
+          <span class="aye-c">{{ s.aye }} AYE</span>
+          <span class="no-c">{{ s.no }} NO</span>
+          <span>of {{ s.total }} divisions</span>
+        </div>
+        <div class="spotlight-recent">
+          {% for v in s.recent %}
+          <div class="spotlight-vote">
+            <span class="pill {{ 'aye' if v['voted_aye'] else 'no' }}">{{ 'AYE' if v['voted_aye'] else 'NO' }}</span>
+            <span>{{ v['title'][:90] }}{% if v['title']|length > 90 %}…{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <a href="/mp/{{ member['member_id'] }}/issue/{{ topic_to_slug(s.topic) }}" class="card-link">View full record →</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-spotlight">No issue-matched votes found in the current record.</p>
+    {% endif %}
+  </div>
+  {% endif %}{# end coverage.show_spotlight #}
+
+  <!-- Votes -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🗳️ Recent Votes</h2>
+      <span class="source-label">Source: commonsvotes-api.parliament.uk</span>
+    </div>
+    {% if not votes %}
+    <p class="no-spotlight">No votes loaded for this MP. {{ coverage.message or '' }}</p>
+    {% endif %}
+    {% for v in votes %}
+    {% set loop_idx = loop.index %}
+    <div class="vote-row" id="vrow-{{ v['division_id'] }}"
+         data-explainable="true"
+         data-explain-type="vote-row"
+         data-member-id="{{ member['member_id'] }}"
+         data-division-id="{{ v['division_id'] }}">
+      <span class="vote-pill {{ 'aye' if v['voted_aye'] else 'no' }}">
+        {{ 'AYE' if v['voted_aye'] else 'NO' }}
+      </span>
+      <span class="vote-date">{{ v['division_date'][:10] }}</span>
+      {% if variant == 'B' and loop_idx <= 3 %}
+      <div class="vote-title-wrap">
+        <span class="vote-title">{{ v['title'] }}</span>
+        <span class="inline-summary loading" id="summary-{{ v['division_id'] }}"
+              data-division="{{ v['division_id'] }}" data-member="{{ member['member_id'] }}">Loading summary…</span>
+      </div>
+      {% else %}
+      <span class="vote-title">{{ v['title'] }}</span>
+      {% endif %}
+      <span class="vote-counts">{{ v['aye_count'] }} / {{ v['no_count'] }}</span>
+      {% if variant != 'B' or loop_idx > 3 %}
+      <button class="explain-btn"
+              data-division="{{ v['division_id'] }}"
+              data-member="{{ member['member_id'] }}">Explain</button>
+      {% endif %}
+    </div>
+    <div class="explain-panel" id="explain-{{ v['division_id'] }}" style="display:none" data-level="1">
+      <div class="inline-level-bar">
+        <button class="explain-level-btn" data-level="0" title="Skimming the surface">Skim</button>
+        <button class="explain-level-btn" data-level="1" title="What this means for you">Practical</button>
+        <button class="explain-level-btn" data-level="2" title="Context and implications">Detailed</button>
+        <button class="explain-level-btn" data-level="3" title="I want to know it all">Full</button>
+      </div>
+      <div class="explain-panel-inner">Loading…</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Written Questions -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📋 Written Questions</h2>
+      <span class="source-label">Source: members-api.parliament.uk</span>
+    </div>
+    {% for q in questions %}
+    <div class="q-row">
+      <div class="q-meta">
+        <span class="q-date">{{ q['date_tabled'][:10] }}</span>
+        <span class="q-body-tag">{{ q['answering_body'] }}</span>
+      </div>
+      <div class="q-text">{{ q['question_text'][:200] }}{% if q['question_text']|length > 200 %}…{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if coverage.show_pledges %}
+  <!-- Pledges vs Record -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📊 Pledges vs Public Record</h2>
+      <span class="badge">PREVIEW</span>
+    </div>
+    {% set status_short = {'no_record': 'No record', 'partial': 'Partial', 'matched': 'Matched'} %}
+    {% for p in pledges %}
+    <div class="pledge-row">
+      <div>
+        <span class="pledge-status {{ p['status'] }}">{{ status_short.get(p['status'], p['status']) }}</span>
+      </div>
+      <div>
+        <div class="pledge-text">{{ p['pledge'] }}</div>
+        <div class="pledge-detail">{{ p['label'] }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="mock-note">
+      ⚠️ Pledge matching is not yet automated — entries above are illustrative placeholders.
+      Real matching against Hansard and manifesto text is in development.
+    </div>
+  </div>
+  {% endif %}{# end coverage.show_pledges #}
+
+  <!-- CTA -->
+  <div class="cta-bar">
+    <h2>Would you use this?</h2>
+    <p>
+      This is a working prototype built entirely on public records from Parliament's open APIs.<br>
+      No spin. No press releases. Just the record.
+    </p>
+    <a href="mailto:ogtradewithmeai@gmail.com?subject=MyGov — I want to test this (Variant {{ variant }})">
+      Yes — I'd test this &rarr;
+    </a>
+    <p style="margin-top:16px; font-size:13px; color:#475569;">
+      Comparing versions?
+      <a href="/compare" style="color:#7dd3fc;">See both variants &rarr;</a>
+      &nbsp;&middot;&nbsp;
+      <a href="mailto:ogtradewithmeai@gmail.com?subject=MyGov A/B Feedback — Variant {{ variant }}&body=I preferred Variant {{ variant }} because..."
+         style="color:#7dd3fc;">Which version was clearer? Tell us &rarr;</a>
+    </p>
+    <div style="margin-top:8px; font-size:11px; color:#334155;">You are viewing Variant {{ variant }}</div>
+  </div>
+
+</div>
+
+<link rel="stylesheet" href="/static/explain-mode.css">
+<script src="/static/explain-mode.js"></script>
+
+<script>
+var panelCache = {};
+
+function getPanelLevel(panel) {
+  return parseInt(panel.dataset.level || '1', 10);
+}
+
+function setPanelLevel(panel, level) {
+  panel.dataset.level = level;
+  panel.querySelectorAll('.explain-level-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.level, 10) === level);
+  });
+}
+
+async function fetchPanelExplanation(divId, membId, panel, level) {
+  var cacheKey = divId + ':' + level;
+  var inner = panel.querySelector('.explain-panel-inner');
+  if (panelCache[cacheKey]) {
+    inner.textContent = panelCache[cacheKey];
+    return;
+  }
+  inner.textContent = 'Loading…';
+  try {
+    var r = await fetch('/api/explain-vote?division_id=' + divId + '&member_id=' + membId + '&level=' + level);
+    var d = await r.json();
+    var text = d.explanation || d.error || 'Could not load explanation.';
+    panelCache[cacheKey] = text;
+    inner.textContent = text;
+  } catch(e) {
+    inner.textContent = 'Network error — please try again.';
+  }
+}
+
+document.querySelectorAll('.explain-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var divId = this.dataset.division;
+    var membId = this.dataset.member;
+    var panel = document.getElementById('explain-' + divId);
+    if (panel.style.display !== 'none') {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = '';
+    setPanelLevel(panel, getPanelLevel(panel));
+    fetchPanelExplanation(divId, membId, panel, getPanelLevel(panel));
+  });
+});
+
+document.querySelectorAll('.explain-panel').forEach(function(panel) {
+  panel.addEventListener('click', function(e) {
+    var btn = e.target.closest('.explain-level-btn');
+    if (!btn) return;
+    var newLevel = parseInt(btn.dataset.level, 10);
+    var panelEl = btn.closest('.explain-panel');
+    var divId = panelEl.id.replace('explain-', '');
+    var vrow = document.getElementById('vrow-' + divId);
+    var membId = vrow ? vrow.dataset.memberId : null;
+    if (!membId) return;
+    if (newLevel === getPanelLevel(panelEl)) return;
+    setPanelLevel(panelEl, newLevel);
+    fetchPanelExplanation(divId, membId, panelEl, newLevel);
+  });
+});
+
+// Variant B: auto-fetch brief summaries for the first 3 votes
+document.querySelectorAll('.inline-summary').forEach(async function(el) {
+  var divId = el.dataset.division;
+  var membId = el.dataset.member;
+  try {
+    var r = await fetch('/api/explain-vote?division_id=' + divId + '&member_id=' + membId + '&style=brief');
+    var d = await r.json();
+    el.classList.remove('loading');
+    el.textContent = d.explanation || '';
+    if (!d.explanation) el.style.display = 'none';
+  } catch(e) {
+    el.style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>

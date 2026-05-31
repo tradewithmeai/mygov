@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Public Whip - MSPs</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep"> | </span>
+    Public parliamentary records
+    <span class="pw-identity-sep"> | </span>
+    Inspired by Public Whip-style civic data browsing
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link pw-nav-current">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <h1 data-explainable="true" data-explain-type="section" data-context="msps">MSPs</h1>
+    <p class="pw-muted" data-explainable="true" data-explain-type="note" data-context="msps-scope">
+      This MVP focuses on UK Parliament House of Commons MPs. MSP support is a planned connector.
+    </p>
+  </main>
+
+  <script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+  <link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+</div>
+</body>
+</html>

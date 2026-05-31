@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Public Whip — Parliamentary voting record</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body>
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep">·</span>
+    Public parliamentary records
+    <span class="pw-identity-sep">·</span>
+    Inspired by Public Whip-style civic data browsing
+    <span class="pw-identity-sep">·</span>
+    <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+      <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <div class="pw-home-hero">
+      <div class="pw-homesearch">
+        <h2 class="pw-homesearch-title">Search the Whip</h2>
+        <p class="pw-homesearch-desc">Enter an <strong>MP name</strong>, <strong>constituency</strong>, or a particular <strong>vote topic</strong> of interest</p>
+        <form action="/publicwhip/search" method="get">
+          <input class="pw-homesearch-input" type="search" name="q" placeholder="MP name or vote topic…" autofocus>
+          <button class="pw-homesearch-btn" type="submit" title="Search MPs, constituencies, or vote subjects">Submit</button>
+        </form>
+      </div>
+      <div class="pw-homeintro">
+        <h1 data-explainable="true" data-explain-type="section" data-context="publicwhip-home-hero">
+          Find out how <em class="pw-emph">your</em> MP votes on the issues <em class="pw-emph">you</em> care about.
+        </h1>
+        <p>Your MP votes on changes to British law on your behalf. When parliament is in session, they may do this a dozen times a week.</p>
+        <p>In order to know whether your MP is representing your views on the issues, you need to know how they've voted.</p>
+        <p>The Public Whip lets you see all their votes so you can hold them to account.</p>
+      </div>
+    </div>
+    <div class="pw-homesponsor">
+      Help support Public Whip and keep us counting those votes by using these links:<br>
+      <a href="https://share.octopus.energy/snow-lake-228" target="_blank" rel="noopener">Octopus Energy</a> (UK) – signup using this link and you'll get £50 and so will we! (affiliate)<br>
+      <a href="https://monzo.com/pay/r/bairwell-ltd_7TtAGhhx1AMkXY" target="_blank" rel="noopener">Donate £5 via UK bank account or Visa, Mastercard, Amex or Discover</a><br>
+      Make a reoccuring or one-off donation via <a href="https://github.com/sponsors/bairwell" target="_blank" rel="noopener">Github</a> (charged in USD, min $5) or <a href="https://ko-fi.com/bairwell" target="_blank" rel="noopener">Ko-Fi</a> (charged in GBP, min £1)
+    </div>
+
+    <section class="pw-section">
+      <h2 class="pw-section-title" data-explainable="true" data-explain-type="section" data-context="recent-divisions">Recent divisions</h2>
+      <table class="pw-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Subject</th>
+            <th class="pw-num-col">Ayes</th>
+            <th class="pw-num-col">Noes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in recent %}
+          <tr data-lens-division-id="{{ d.division_id }}"
+              data-explainable="true"
+              data-explain-type="division"
+              data-division-id="{{ d.division_id }}">
+            <td class="pw-muted" style="white-space:nowrap">{{ (d.division_date or '')[:10] }}</td>
+            <td><a class="pw-link" href="/publicwhip/division/{{ d.division_id }}" data-lens-division-id="{{ d.division_id }}">{{ d.title or 'Untitled division' }}</a></td>
+            <td class="pw-num-col pw-aye">{{ d.aye_count or '—' }}</td>
+            <td class="pw-num-col pw-no">{{ d.no_count or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <div class="pw-bluebox">
+    <h3>About the Project</h3>
+    <p>Public Whip helped pioneer open parliamentary vote analysis in the UK.
+    It is a not-for-profit, open source project.
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">Visit publicwhip.org.uk →</a></p>
+    <p>This view uses UK Parliament open data API records only.</p>
+  </div>
+  <footer class="pw-footer">
+    Data sourced from the UK Parliament open data API. Public record only.
+    <span class="pw-footer-sep">·</span>
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">publicwhip.org.uk</a>
+  </footer>
+</div>
+<link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+<script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+</body>
+</html>

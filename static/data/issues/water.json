@@ -1,0 +1,858 @@
+{
+  "meta": {
+    "issue_id": "water",
+    "title": "Water Quality & Sewage",
+    "subtitle": "What did your MP actually do?",
+    "description": "Storm overflow discharge and water quality regulation in England and Wales. Voting records from UK Parliament. Sewage spill hours are prototype data derived from Environment Agency Annual Return patterns — verify before publishing.",
+    "data_status": "prototype",
+    "data_note": "Action states reflect parliamentary record only. No absence-equals-guilt inference. Scottish and Welsh constituencies operate under devolved water regulation — records reflect Westminster activity only.",
+    "geojson_status": "fallback — tile map in use",
+    "geojson_note": "Real 2024 Westminster constituency boundaries (July 2024 BFE) are available from the ONS Geography Portal. This prototype uses a tile grid approximation to unblock the demo. Replace grid_col/grid_row with real GeoJSON coordinates for v2.",
+    "geojson_source": "https://geoportal.statistics.gov.uk/datasets/ons::westminster-parliamentary-constituencies-july-2024-boundaries-uk-bfe/about",
+    "key_vote": {
+      "label": "Environment Bill — Lords Amendment 45 (Storm Overflow Duty)",
+      "date": "2021-10-26",
+      "description": "Proposed placing a legal duty on water companies to progressively reduce harm from storm overflow discharges. Defeated 268–272.",
+      "hansard_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+      "votes_search_url": "https://votes.parliament.uk/Votes/Commons/Division?session=2021-22"
+    },
+    "sources": [
+      "UK Parliament Votes API — commonsvotes-api.parliament.uk",
+      "Hansard — hansard.parliament.uk",
+      "Environment Agency Storm Overflow Annual Return — environment.data.gov.uk",
+      "Written Questions — questions-statements.parliament.uk"
+    ],
+    "last_updated": "2026-05-26",
+    "variant": "B"
+  },
+  "action_states": {
+    "acted": {
+      "label": "Active in parliament",
+      "description": "Voted for and/or publicly advocated stricter water regulation in parliament",
+      "color": "#0d9488",
+      "text_color": "#fff"
+    },
+    "raised": {
+      "label": "Raised concern",
+      "description": "Asked questions or made speeches on water quality. No matching vote found in available data.",
+      "color": "#d97706",
+      "text_color": "#fff"
+    },
+    "opposed": {
+      "label": "Voted against stricter measures",
+      "description": "Voted against proposed strengthening of water regulation. This records a vote — it does not imply support for pollution.",
+      "color": "#9f1239",
+      "text_color": "#fff"
+    },
+    "no_record": {
+      "label": "No record found",
+      "description": "No matching parliamentary activity found in available data. This does not mean the MP has no view on this issue.",
+      "color": "#374151",
+      "text_color": "#9ca3af"
+    }
+  },
+  "constituencies": [
+    {
+      "id": "inverness-skye-west-ross",
+      "name": "Inverness, Skye and West Ross-shire",
+      "mp_name": "Angus MacDonald",
+      "mp_member_id": 5362,
+      "party": "Liberal Democrat",
+      "grid_col": 3,
+      "grid_row": 2,
+      "action_state": "raised",
+      "said": true,
+      "voted": null,
+      "voted_note": "Scottish MPs do not vote on English water regulation",
+      "delivered": null,
+      "sewage_spill_hours": null,
+      "sewage_note": "Scottish Water — regulated separately from Ofwat under Scottish Parliament",
+      "evidence": [
+        {
+          "type": "question",
+          "title": "Written question to DEFRA on water quality monitoring",
+          "date": "2024-11-14",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 193,
+      "fairness_note": "Scottish MPs do not vote on English & Welsh water regulation. This shows Westminster record only — Scottish Water is regulated via the Scottish Parliament."
+    },
+    {
+      "id": "aberdeen-south",
+      "name": "Aberdeen South",
+      "mp_name": "Stephen Flynn",
+      "mp_member_id": null,
+      "party": "Scottish National Party",
+      "grid_col": 6,
+      "grid_row": 1,
+      "action_state": "raised",
+      "said": true,
+      "voted": null,
+      "voted_note": "SNP typically abstains on England-only matters under EVEL conventions",
+      "delivered": null,
+      "sewage_spill_hours": null,
+      "sewage_note": "Scottish Water — not regulated by Ofwat",
+      "evidence": [
+        {
+          "type": "speech",
+          "title": "Opposition Day debate — Water Quality, England",
+          "date": "2023-11-08",
+          "source_url": "https://hansard.parliament.uk/commons/2023-11-08",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 199,
+      "fairness_note": "Scottish constituencies use Scottish Water, regulated separately. This record reflects Westminster participation only."
+    },
+    {
+      "id": "edinburgh-east-musselburgh",
+      "name": "Edinburgh East and Musselburgh",
+      "mp_name": "Tommy Sheppard",
+      "mp_member_id": null,
+      "party": "Scottish National Party",
+      "grid_col": 6,
+      "grid_row": 3,
+      "action_state": "no_record",
+      "said": false,
+      "voted": null,
+      "voted_note": "Scottish MP — English water regulation not directly applicable",
+      "delivered": null,
+      "sewage_spill_hours": null,
+      "sewage_note": "Scottish Water — separate regulator",
+      "evidence": [],
+      "freshness_days": null,
+      "fairness_note": "No parliamentary record found in available data for English water quality debates. Scottish MPs represent constituents served by Scottish Water under Scottish Parliament oversight."
+    },
+    {
+      "id": "newcastle-east-wallsend",
+      "name": "Newcastle upon Tyne East and Wallsend",
+      "mp_name": "Mary Glindon",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 8,
+      "grid_row": 5,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 3840,
+      "sewage_note": "Northumbrian Water area. 3,840 hours storm overflow (2023, prototype figure — verify with EA Annual Return)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45 (Storm Overflow Duty)",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question to DEFRA on Northumbrian Water storm overflow frequency",
+          "date": "2023-06-12",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": "Action state based on parliamentary record available in this dataset. Individual votes can be verified via the Parliament Votes API."
+    },
+    {
+      "id": "sunderland-central",
+      "name": "Sunderland Central",
+      "mp_name": "Lewis Atkinson",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 8,
+      "grid_row": 6,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 4120,
+      "sewage_note": "Northumbrian Water area. 4,120 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "ribble-valley",
+      "name": "Ribble Valley",
+      "mp_name": "Nigel Evans",
+      "mp_member_id": null,
+      "party": "Conservative",
+      "grid_col": 5,
+      "grid_row": 6,
+      "action_state": "opposed",
+      "said": false,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 5610,
+      "sewage_note": "United Utilities area. 5,610 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted against Environment Bill — Lords Amendment 45 (Storm Overflow Duty)",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": "Voting against this amendment does not imply support for pollution. The government's position was that existing legislation was sufficient. Verify via Parliament Votes API."
+    },
+    {
+      "id": "salford",
+      "name": "Salford",
+      "mp_name": "Paul Waugh",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 4,
+      "grid_row": 7,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 6340,
+      "sewage_note": "United Utilities area. 6,340 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "leeds-central-headingley",
+      "name": "Leeds Central and Headingley",
+      "mp_name": "Alex Sobel",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 7,
+      "grid_row": 7,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 4890,
+      "sewage_note": "Yorkshire Water area. 4,890 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question on Yorkshire Water sewage discharge frequency",
+          "date": "2023-09-05",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 263,
+      "fairness_note": null
+    },
+    {
+      "id": "york-central",
+      "name": "York Central",
+      "mp_name": "Rachael Maskell",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 8,
+      "grid_row": 7,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 3750,
+      "sewage_note": "Yorkshire Water area. 3,750 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "sheffield-brightside-hillsborough",
+      "name": "Sheffield Brightside and Hillsborough",
+      "mp_name": "Gill Furniss",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 6,
+      "grid_row": 8,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 5200,
+      "sewage_note": "Yorkshire Water area. 5,200 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "witney",
+      "name": "Witney",
+      "mp_name": "Robert Courts",
+      "mp_member_id": null,
+      "party": "Conservative",
+      "grid_col": 4,
+      "grid_row": 10,
+      "action_state": "opposed",
+      "said": false,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 7840,
+      "sewage_note": "Thames Water area. 7,840 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted against Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": "Voting against this amendment reflects the government's position that the existing regulatory framework was sufficient. Verify individual vote via Parliament API."
+    },
+    {
+      "id": "nottingham-east",
+      "name": "Nottingham East",
+      "mp_name": "Nadia Whittome",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 8,
+      "grid_row": 9,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 2980,
+      "sewage_note": "Severn Trent area. 2,980 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "birmingham-ladywood",
+      "name": "Birmingham Ladywood",
+      "mp_name": "Shabana Mahmood",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 5,
+      "grid_row": 10,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 2140,
+      "sewage_note": "Severn Trent area. 2,140 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "cambridge",
+      "name": "Cambridge",
+      "mp_name": "Daniel Zeichner",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 9,
+      "grid_row": 9,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 1860,
+      "sewage_note": "Anglian Water area. 1,860 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question on Anglian Water chalk stream damage",
+          "date": "2024-03-18",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 69,
+      "fairness_note": null
+    },
+    {
+      "id": "ipswich",
+      "name": "Ipswich",
+      "mp_name": "Jack Abbott",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 10,
+      "grid_row": 10,
+      "action_state": "raised",
+      "said": true,
+      "voted": false,
+      "voted_note": "Not yet on record for the key divisions — new MP elected July 2024",
+      "delivered": null,
+      "sewage_spill_hours": 2300,
+      "sewage_note": "Anglian Water area. 2,300 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "speech",
+          "title": "Maiden speech referenced Orwell estuary water quality",
+          "date": "2024-09-03",
+          "source_url": "https://hansard.parliament.uk/commons/2024-09-03",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 265,
+      "fairness_note": "New MP (elected July 2024) — limited parliamentary record available. This does not reflect views or long-term stance."
+    },
+    {
+      "id": "cardiff-west",
+      "name": "Cardiff West",
+      "mp_name": "Alex Davies-Jones",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 2,
+      "grid_row": 10,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": null,
+      "sewage_note": "Welsh Water (Dŵr Cymru) — primarily regulated by Natural Resources Wales under Welsh Government",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": "Welsh water regulation is partly devolved. Westminster votes affect reserved matters; Welsh Parliament handles much of water policy in Wales."
+    },
+    {
+      "id": "newport-west-islwyn",
+      "name": "Newport West and Islwyn",
+      "mp_name": "Ruth Jones",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 2,
+      "grid_row": 11,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": null,
+      "sewage_note": "Welsh Water area — devolved regulation",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": "Welsh water regulation is partly devolved to Senedd Cymru."
+    },
+    {
+      "id": "tottenham",
+      "name": "Tottenham",
+      "mp_name": "David Lammy",
+      "mp_member_id": 206,
+      "party": "Labour",
+      "grid_col": 6,
+      "grid_row": 12,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 8920,
+      "sewage_note": "Thames Water area — one of highest spill volumes in England. 8,920 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45 (Storm Overflow Duty)",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question to DEFRA on Thames Water enforcement action",
+          "date": "2023-08-22",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 277,
+      "fairness_note": null
+    },
+    {
+      "id": "chelsea-fulham",
+      "name": "Chelsea and Fulham",
+      "mp_name": "Ben Coleman",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 5,
+      "grid_row": 13,
+      "action_state": "raised",
+      "said": true,
+      "voted": false,
+      "voted_note": "New MP (elected July 2024) — key vote predates tenure",
+      "delivered": null,
+      "sewage_spill_hours": 7200,
+      "sewage_note": "Thames Water area. 7,200 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "speech",
+          "title": "Raised Thames Water financial crisis in maiden speech",
+          "date": "2024-09-10",
+          "source_url": "https://hansard.parliament.uk/commons/2024-09-10",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 258,
+      "fairness_note": "New MP — key Environment Bill vote (Oct 2021) predates their election. Record will expand with time in parliament."
+    },
+    {
+      "id": "greenwich-woolwich",
+      "name": "Greenwich and Woolwich",
+      "mp_name": "Matthew Pennycook",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 8,
+      "grid_row": 12,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 9100,
+      "sewage_note": "Thames Water area. 9,100 hours storm overflow (2023, prototype — Thames is highest in England)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "bristol-central",
+      "name": "Bristol Central",
+      "mp_name": "Carla Denyer",
+      "mp_member_id": null,
+      "party": "Green Party",
+      "grid_col": 3,
+      "grid_row": 12,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 6700,
+      "sewage_note": "Bristol Water / Wessex Water area. 6,700 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "speech",
+          "title": "Debate on Water Industry Act — Avon sewage discharge",
+          "date": "2024-10-22",
+          "source_url": "https://hansard.parliament.uk/commons/2024-10-22",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 216,
+      "fairness_note": null
+    },
+    {
+      "id": "bath",
+      "name": "Bath",
+      "mp_name": "Wera Hobhouse",
+      "mp_member_id": null,
+      "party": "Liberal Democrat",
+      "grid_col": 4,
+      "grid_row": 13,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 5900,
+      "sewage_note": "Wessex Water area. 5,900 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question on River Avon sewage events, Wessex Water",
+          "date": "2023-11-28",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 179,
+      "fairness_note": null
+    },
+    {
+      "id": "guildford",
+      "name": "Guildford",
+      "mp_name": "Zoe Franklin",
+      "mp_member_id": null,
+      "party": "Liberal Democrat",
+      "grid_col": 7,
+      "grid_row": 13,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 7100,
+      "sewage_note": "Thames Water area. 7,100 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 209,
+      "fairness_note": null
+    },
+    {
+      "id": "maidstone-malling",
+      "name": "Maidstone and Malling",
+      "mp_name": "Helen Grant",
+      "mp_member_id": null,
+      "party": "Conservative",
+      "grid_col": 9,
+      "grid_row": 13,
+      "action_state": "no_record",
+      "said": false,
+      "voted": false,
+      "delivered": null,
+      "sewage_spill_hours": 4600,
+      "sewage_note": "Southern Water area. 4,600 hours storm overflow (2023, prototype)",
+      "evidence": [],
+      "freshness_days": null,
+      "fairness_note": "No matching parliamentary record found in available data. This does not mean the MP has no view on water quality. Please verify via Parliament search before drawing conclusions."
+    },
+    {
+      "id": "brighton-pavilion",
+      "name": "Brighton Pavilion",
+      "mp_name": "Siân Berry",
+      "mp_member_id": null,
+      "party": "Green Party",
+      "grid_col": 7,
+      "grid_row": 15,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 11200,
+      "sewage_note": "Southern Water area. 11,200 hours storm overflow (2023, prototype — Southern Water is among England's worst performers)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "speech",
+          "title": "Adjournment debate — Southern Water sewage discharge, Sussex coast",
+          "date": "2024-07-15",
+          "source_url": "https://hansard.parliament.uk/commons/2024-07-15",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 315,
+      "fairness_note": null
+    },
+    {
+      "id": "southampton-itchen",
+      "name": "Southampton Itchen",
+      "mp_name": "Satvir Kaur",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 6,
+      "grid_row": 15,
+      "action_state": "raised",
+      "said": true,
+      "voted": false,
+      "voted_note": "New MP elected July 2024 — key vote predates tenure",
+      "delivered": null,
+      "sewage_spill_hours": 9800,
+      "sewage_note": "Southern Water area. 9,800 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "question",
+          "title": "Written question to DEFRA on River Itchen water quality",
+          "date": "2024-11-06",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 201,
+      "fairness_note": "New MP (elected July 2024). Environment Bill vote predates tenure."
+    },
+    {
+      "id": "exeter",
+      "name": "Exeter",
+      "mp_name": "Steve Race",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 3,
+      "grid_row": 15,
+      "action_state": "raised",
+      "said": true,
+      "voted": false,
+      "voted_note": "New MP elected July 2024",
+      "delivered": null,
+      "sewage_spill_hours": 12400,
+      "sewage_note": "South West Water area. 12,400 hours storm overflow (2023, prototype — SW Water consistently among highest in England)",
+      "evidence": [
+        {
+          "type": "question",
+          "title": "Written question on South West Water tariffs and sewage investment",
+          "date": "2024-10-14",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 224,
+      "fairness_note": "New MP (July 2024). South West Water area has among the highest spill hours in England — a local issue for Exeter constituents."
+    },
+    {
+      "id": "plymouth-sutton-devonport",
+      "name": "Plymouth Sutton and Devonport",
+      "mp_name": "Luke Pollard",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 2,
+      "grid_row": 16,
+      "action_state": "acted",
+      "said": true,
+      "voted": true,
+      "delivered": null,
+      "sewage_spill_hours": 13800,
+      "sewage_note": "South West Water area. 13,800 hours storm overflow (2023, prototype — highest in dataset)",
+      "evidence": [
+        {
+          "type": "vote",
+          "title": "Voted for Environment Bill — Lords Amendment 45",
+          "date": "2021-10-26",
+          "source_url": "https://hansard.parliament.uk/commons/2021-10-26/debates/36E9FC25-52A3-4EF4-9B20-9ECA5EB6D1ED/EnvironmentBill",
+          "confidence": "prototype"
+        },
+        {
+          "type": "question",
+          "title": "Written question on South West Water bathing water standards, Plymouth Sound",
+          "date": "2023-07-04",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 326,
+      "fairness_note": null
+    },
+    {
+      "id": "truro-falmouth",
+      "name": "Truro and Falmouth",
+      "mp_name": "Jayne Morgan",
+      "mp_member_id": null,
+      "party": "Labour",
+      "grid_col": 1,
+      "grid_row": 16,
+      "action_state": "raised",
+      "said": true,
+      "voted": false,
+      "voted_note": "New MP elected July 2024",
+      "delivered": null,
+      "sewage_spill_hours": 14100,
+      "sewage_note": "South West Water area. 14,100 hours storm overflow (2023, prototype)",
+      "evidence": [
+        {
+          "type": "question",
+          "title": "Written question on Fal estuary water quality and South West Water enforcement",
+          "date": "2024-12-03",
+          "source_url": "https://questions-statements.parliament.uk/written-questions",
+          "confidence": "prototype"
+        }
+      ],
+      "freshness_days": 174,
+      "fairness_note": "New MP (July 2024). South West Water is the highest-overflow company in the dataset."
+    }
+  ]
+}

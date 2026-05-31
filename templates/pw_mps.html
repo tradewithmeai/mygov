@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Public Whip - MPs</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep"> | </span>
+    Public parliamentary records
+    <span class="pw-identity-sep"> | </span>
+    Inspired by Public Whip-style civic data browsing
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link pw-nav-current">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <h1 data-explainable="true" data-explain-type="section" data-context="mps-index">MPs</h1>
+    <form class="pw-searchbar" action="/publicwhip/mps" method="get">
+      <input class="pw-searchbar-input" type="search" name="q" value="{{ q or '' }}" placeholder="Search MP, party, or constituency...">
+      <button class="pw-searchbar-btn" type="submit" title="Filter MPs">Search</button>
+    </form>
+
+    <section class="pw-section">
+      <table class="pw-table">
+        <thead>
+          <tr>
+            <th>MP</th>
+            <th>Party</th>
+            <th>Constituency</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in mps %}
+          <tr data-explainable="true" data-explain-type="mp" data-member-id="{{ m.member_id }}">
+            <td>
+              <a class="pw-link" href="/publicwhip/mp/{{ m.member_id }}">{{ m.name }}</a>
+              <a class="pw-contact-mp pw-contact-mp--compact"
+                 href="https://www.writetothem.com/"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 title="Contact this MP via WriteToThem"
+                 aria-label="Contact {{ m.name }} via WriteToThem">
+                <span class="pw-contact-logo" aria-hidden="true">MP</span>
+                <span>Contact</span>
+              </a>
+            </td>
+            <td class="pw-muted">{{ m.party or 'Unknown' }}</td>
+            <td class="pw-muted">{{ m.constituency or '--' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="pw-muted">Showing up to 200 MPs (seed DB).</p>
+    </section>
+  </main>
+
+  <script src="/static/explain-mode.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+  <link rel="stylesheet" href="/static/explain-mode.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+</div>
+</body>
+</html>

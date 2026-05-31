@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyGov — {{ t('welcome_title') }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: radial-gradient(ellipse at 50% 30%, #0d1a30 0%, #050810 70%);
+    color: #e8eaf0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  .stage {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px;
+    text-align: center;
+    gap: 26px;
+    animation: fade-in 280ms ease both;
+  }
+  .badge {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+    background: rgba(15, 23, 42, 0.78);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 999px;
+    padding: 6px 14px;
+    backdrop-filter: blur(10px) saturate(140%);
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    color: #f0f9ff;
+    max-width: 760px;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  p.subtitle {
+    font-size: clamp(15px, 2vw, 19px);
+    color: #cbd5e1;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  .progress {
+    width: 220px;
+    height: 3px;
+    background: rgba(125, 211, 252, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #38bdf8, #22d3ee);
+    animation: fill 1600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .btn {
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, 0.62);
+    text-decoration: none;
+    backdrop-filter: blur(10px) saturate(140%);
+    transition: color 140ms, border-color 140ms, background 140ms;
+  }
+  .btn:hover { color: #f0f9ff; border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.14); }
+  .btn-primary {
+    color: #f0f9ff;
+    border-color: #86efac;
+    background: rgba(34, 211, 238, 0.18);
+    box-shadow: 0 0 18px rgba(74, 222, 128, 0.35);
+  }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes fill { from { width: 0; } to { width: 100%; } }
+</style>
+</head>
+<body>
+<main class="stage">
+  <span class="badge">MyGov</span>
+  <h1>{{ t('welcome_title') }}</h1>
+  <p class="subtitle">{{ t('welcome_subtitle') }}</p>
+  <div class="progress" aria-hidden="true"></div>
+  <div class="actions">
+    <a class="btn" href="/" id="welcome-skip">{{ t('welcome_skip') }}</a>
+    <a class="btn btn-primary" href="/start?lang={{ locale }}{% if cc %}&cc={{ cc }}{% endif %}" id="welcome-go">{{ t('welcome_go') }}</a>
+  </div>
+</main>
+<script>
+  (function () {
+    // Auto-route to /start after ~1.6s. The "Go now" button shortcuts; "Skip" returns to /.
+    var go = document.getElementById('welcome-go');
+    var skip = document.getElementById('welcome-skip');
+    var dismissed = false;
+    function dismiss(fn) { if (dismissed) return; dismissed = true; fn(); }
+    var timer = window.setTimeout(function () {
+      dismiss(function () { window.location.href = go.getAttribute('href'); });
+    }, 1600);
+    go.addEventListener('click', function () { window.clearTimeout(timer); });
+    skip.addEventListener('click', function () { window.clearTimeout(timer); });
+  })();
+</script>
+</body>
+</html>

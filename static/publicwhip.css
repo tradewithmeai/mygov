@@ -1,0 +1,784 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ── Aye/No colour variables (used by explain-mode.js injected elements) ── */
+:root {
+  --aye: #22863a;
+  --no: #c0392b;
+  --rebel: #e67e22;
+}
+
+/* ── Exact Public Whip globals ── */
+html {
+  background: #494c4c;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #494c4c;
+  color: #666;
+  font: normal 93.75%/1.5 "Lucida Sans Unicode", "Lucida Grande", Verdana, Geneva, sans-serif;
+  text-align: center;
+}
+
+/* White content box — mirrors PW #whitebox */
+.pw-shell {
+  max-width: 980px;
+  margin: 0 auto;
+  background: #fff;
+  text-align: left;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #c6ced0;
+  border-right: 1px solid #c6ced0;
+}
+
+/* ── MyGov identity strip — small, subordinate ── */
+.pw-identity-bar {
+  background: #f0f5f0;
+  border-bottom: 1px solid #c8d8c0;
+  padding: 4px 16px;
+  font-size: 11px;
+  color: #5a7040;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  letter-spacing: 0;
+}
+
+.pw-identity-sep { color: #aabcaa; }
+
+.pw-identity-bar a {
+  color: #4a6830;
+  text-decoration: none;
+  border-bottom: 1px dotted #4a6830;
+}
+
+.pw-identity-bar a:hover { border-bottom-style: solid; }
+
+.pw-identity-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #dde8cc;
+  border: 1px solid #a8c080;
+  color: #3d5a1a;
+}
+
+/* ── Header — mirrors PW #header ── */
+.pw-topbar {
+  border-bottom: 1px solid #c6ced0;
+  padding: 20px 19px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  position: relative;
+  min-height: 72px;
+  flex-wrap: wrap;
+}
+
+/* Brand: render the original Public Whip logo as a background image
+   on the existing .pw-brand link, hiding the text content visually
+   while keeping it for screen readers. No template edits needed. */
+.pw-brand {
+  display: inline-block;
+  width: 180px;
+  height: 56px;
+  background: url("/static/img/publicwhip-logo.jpg") left center / contain no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.pw-brand:hover { opacity: 0.85; text-decoration: none; }
+
+/* Hide the MyGov identity bar at the top of every PublicWhip page —
+   the brand + nav stand on their own; the bar was launch-UI chrome. */
+.pw-identity-bar { display: none !important; }
+
+.pw-tagline {
+  color: #888;
+  font-size: 13px;
+}
+
+.pw-sep { color: #c6ced0; }
+.pw-spacer { flex: 1; }
+
+/* Navigation — mirrors PW #nav_main style */
+.pw-nav-link {
+  color: #797d7f;
+  text-decoration: none;
+  font-size: 1.0em;
+  font-weight: 700;
+  padding: 2px 0;
+  margin-left: 0.44em;
+}
+
+.pw-nav-link:hover { color: #f53181; }
+
+/* ── Main content — mirrors PW .widewidth inside #whitebox ── */
+.pw-main {
+  width: min(951px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 30px 0 48px;
+  flex: 1;
+}
+
+/* Simple search bar used on /publicwhip/mps and /publicwhip/policies */
+.pw-searchbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0 22px;
+}
+.pw-searchbar-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #b0cdd0;
+  border-radius: 4px;
+  font-size: 15px;
+}
+.pw-searchbar-btn {
+  padding: 10px 14px;
+  border: 1px solid #b0cdd0;
+  border-radius: 4px;
+  background: #e8f4f5;
+  cursor: pointer;
+  font-weight: 700;
+}
+.pw-searchbar-btn:hover { background: #dff0f2; }
+
+.pw-mp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.pw-contact-mp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid #b0cdd0;
+  border-radius: 4px;
+  background: #e8f4f5;
+  color: #4a6830;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pw-contact-mp:hover {
+  background: #dff0f2;
+  color: #f53181;
+  text-decoration: none;
+}
+
+.pw-contact-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #8bac35;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.pw-contact-mp--compact {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+/* ── Headings — exact PW sizes ── */
+h1, h2, h3, h4 { margin: 0; }
+
+.pw-main h1, .pw-division-title, .pw-mp-name {
+  font-size: 2.3em;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+
+.pw-main h2, .pw-section-title {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #444;
+  margin: 0 0 12px;
+  padding: 0;
+  border-bottom: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pw-section-count {
+  background: #e8f4f5;
+  border: 1px solid #b0cdd0;
+  border-radius: 3px;
+  font-size: 12px;
+  padding: 1px 7px;
+  color: #444;
+  font-weight: normal;
+}
+
+/* ── Hero / search ── */
+.pw-hero {
+  margin-bottom: 28px;
+}
+
+.pw-hero h1 {
+  font-size: 2.3em;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.1;
+  margin: 0 0 10px;
+}
+
+.pw-lede {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}
+
+.pw-search-section {
+  margin-bottom: 20px;
+}
+
+/* Search — a plain horizontal form like PW */
+.pw-search-form {
+  display: flex;
+  gap: 0;
+  max-width: 520px;
+  border: 1px solid #a0b0b8;
+  background: #fff;
+  overflow: visible;
+}
+
+.pw-search-input {
+  flex: 1;
+  background: #fff;
+  border: none;
+  color: #333;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 6px 10px;
+  outline: none;
+}
+
+.pw-search-input::placeholder { color: #999; }
+.pw-search-input:focus { background: #fafff8; }
+
+.pw-search-btn {
+  background: #8bac35;
+  color: #fff;
+  border: none;
+  border-left: 1px solid #6a8828;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 6px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pw-search-btn:hover { background: #6a8828; }
+
+/* ── Sections ── */
+.pw-section {
+  margin-bottom: 32px;
+}
+
+/* ── Tables — exact PW style ── */
+.pw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+/* PW uses no special th styling — just bold text above data rows */
+.pw-table th {
+  text-align: left;
+  color: #444;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 7px;
+  border-bottom: 1px solid #c6ced0;
+  background: transparent;
+}
+
+/* Exact PW td padding */
+.pw-table td {
+  padding: 4px 7px;
+  vertical-align: middle;
+}
+
+/* Exact PW alternating rows */
+.pw-table tr:nth-child(even) td {
+  background: #e7f4f5;
+}
+
+.pw-table tr:hover td {
+  background: #cfe8eb;
+}
+
+.pw-table--compact td,
+.pw-table--compact th { padding: 3px 7px; }
+
+.pw-num-col { text-align: right; }
+
+/* ── Links — exact PW colours ── */
+a.pw-link {
+  color: #8bac35;
+  text-decoration: none;
+  border-bottom: 1px dotted #8bac35;
+}
+
+a.pw-link:hover {
+  border-bottom-style: solid;
+  color: #6a8828;
+}
+
+.pw-muted { color: #888; }
+.pw-aye { color: #22863a; font-weight: 600; }
+.pw-no { color: #c0392b; font-weight: 600; }
+
+/* ── Breadcrumb ── */
+.pw-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 18px;
+}
+
+.pw-sep-bc { color: #bbb; }
+
+/* ── Division header ── */
+.pw-division-header {
+  margin-bottom: 28px;
+}
+
+.pw-division-title {
+  font-size: 2.3em;
+  font-weight: 700;
+  color: #333;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+
+.pw-division-meta {
+  color: #888;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+/* Result bar */
+.pw-result-bar-wrap { max-width: 480px; margin-bottom: 18px; }
+
+.pw-result-bar {
+  display: flex;
+  height: 26px;
+  border: 1px solid #bbb;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.pw-result-aye {
+  background: #8bac35;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  min-width: 50px;
+}
+
+.pw-result-no {
+  background: #c0392b;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  min-width: 50px;
+}
+
+.pw-result-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.pw-result-outcome {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* ── MP profile — plain, like PW's own MP pages ── */
+.pw-mp-profile {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 0;
+  margin-bottom: 28px;
+  background: transparent;
+  border: none;
+  border-left: none;
+}
+
+.pw-mp-photo {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #c6ced0;
+}
+
+.pw-mp-photo--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f4f5;
+  color: #888;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.pw-mp-info { flex: 1; }
+
+.pw-party-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.pw-mp-name {
+  font-size: 2.3em;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+
+.pw-mp-meta {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.pw-stats-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pw-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.pw-stat-val {
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1;
+  color: #333;
+}
+
+.pw-stat-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.pw-stat--aye .pw-stat-val { color: #22863a; }
+.pw-stat--no .pw-stat-val { color: #c0392b; }
+.pw-stat--rebel .pw-stat-val { color: #e67e22; }
+
+.pw-party-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.pw-cta-link {
+  color: #8bac35;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dotted #8bac35;
+}
+
+.pw-cta-link:hover { border-bottom-style: solid; color: #6a8828; }
+
+/* ── Rebellion ── */
+.pw-rebel-row td { background: #fff8e8; }
+
+.pw-rebel-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background: #fff3d0;
+  border: 1px solid #e0a020;
+  color: #8a5000;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  vertical-align: middle;
+}
+
+/* ── Voter grid ── */
+.pw-voter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.pw-voter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.pw-voter-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 7px;
+}
+
+.pw-voter-list li:nth-child(even) { background: #e7f4f5; }
+.pw-voter-list li:hover { background: #cfe8eb; }
+
+/* ── Search results ── */
+.pw-result-summary {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px;
+}
+
+.pw-mp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pw-mp-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 7px;
+  font-size: 13px;
+}
+
+.pw-mp-list li:nth-child(even) { background: #e7f4f5; }
+.pw-mp-list li:hover { background: #cfe8eb; }
+.pw-mp-list-name { font-weight: 700; font-size: 14px; }
+
+/* ── Blue/teal footer box — mirrors PW #bluebox ── */
+.pw-bluebox {
+  background: #cfe8eb;
+  border-top: 1px solid #b7ccd5;
+  padding: 28px 19px 32px;
+  text-align: left;
+}
+
+.pw-bluebox h3 {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: #444;
+  margin: 0 0 10px;
+}
+
+.pw-bluebox p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.pw-bluebox a {
+  color: #8bac35;
+  border-bottom: 1px dotted #8bac35;
+  text-decoration: none;
+}
+
+.pw-bluebox a:hover { border-bottom-style: solid; }
+
+/* ── Footer — mirrors PW #footer ── */
+.pw-footer {
+  padding: 20px 19px;
+  text-align: left;
+  font-size: 12px;
+  color: #aaa;
+  border-top: 1px solid #555;
+  background: #494c4c;
+  line-height: 1.8;
+}
+
+.pw-footer a {
+  color: #8bac35;
+  text-decoration: none;
+  border-bottom: 1px dotted #8bac35;
+}
+
+.pw-footer a:hover { border-bottom-style: solid; }
+
+.pw-footer-sep {
+  margin: 0 8px;
+  color: #666;
+}
+
+.pw-attribution { color: #aaa; }
+
+/* ── Nav ── */
+.pw-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.pw-nav-current {
+  color: #f53181 !important;
+  position: relative;
+}
+
+/* ── Home hero — two-column layout matching actual PW ── */
+.pw-home-hero {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+/* Teal search box — mirrors PW .homesearch */
+.pw-homesearch {
+  width: 262px;
+  flex-shrink: 0;
+  background: #35b4ca;
+  border: 1px solid #2c93a3;
+  color: #fff;
+  padding: 18px;
+}
+
+.pw-homesearch-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+}
+
+.pw-homesearch-desc {
+  font-size: 13px;
+  color: #e0f5fa;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.pw-homesearch-input {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid #2c93a3;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.pw-homesearch-btn {
+  float: right;
+  background: #fff;
+  color: #2c93a3;
+  border: 1px solid #2c93a3;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pw-homesearch-btn:hover { background: #e0f5fa; }
+
+/* Intro text — mirrors PW .homeintro */
+.pw-homeintro {
+  flex: 1;
+  min-width: 260px;
+}
+
+.pw-homeintro h1 {
+  font-size: 1.7em;
+  font-weight: 700;
+  color: #7d8484;
+  line-height: 1.2;
+  margin: 0 0 14px;
+}
+
+.pw-emph {
+  color: #f53181;
+  font-style: normal;
+}
+
+.pw-homeintro p {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+/* Sponsor bar — mirrors PW .homesponsor */
+.pw-homesponsor {
+  background: #c0dd7e;
+  border: 1px solid #8bac35;
+  color: #444;
+  padding: 16px 19px;
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.9;
+  clear: both;
+}
+
+.pw-homesponsor a {
+  color: #3d5a1a;
+  border-bottom: 1px dotted #3d5a1a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pw-homesponsor a:hover { border-bottom-style: solid; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pw-voter-grid { grid-template-columns: 1fr; }
+  .pw-mp-profile { flex-direction: column; }
+  .pw-topbar { gap: 6px; padding: 12px; min-height: auto; }
+  .pw-tagline { display: none; }
+  .pw-main { padding: 16px 0 32px; }
+}

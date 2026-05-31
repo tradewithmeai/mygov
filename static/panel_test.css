@@ -1,0 +1,2639 @@
+[hidden] { display: none !important; }
+
+/* ── Theme tokens ──────────────────────────────────────────
+   Three switchable themes drive the same UI:
+     theme-glass      (default — current Lock+Tidy aesthetic)
+     theme-quiet      (Inter sans, less glass, generous whitespace)
+     theme-editorial  (Source Serif headings, warm off-white source pane)
+   Tokens read by hard-coded rules below via var(--X). Theme classes
+   live on <html> and are persisted to localStorage by theme-picker.js. */
+
+:root, :root.theme-glass {
+  --bg: #0b1020;
+  --panel: #111827;
+  --panel-2: #0f172a;
+  --line: #263244;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --aye: #16a34a;
+  --no: #dc2626;
+  --unknown: #6b7280;
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --source-tint: 1;        /* iframe tint multiplier (1 = no tint) */
+}
+
+:root.theme-quiet {
+  --bg: #0a0e1a;
+  --panel: #0f1626;
+  --panel-2: #0d1322;
+  --line: rgba(148, 163, 184, 0.18);
+  --text: #e8eaf0;
+  --muted: #94a3b8;
+  --accent: #7dd3fc;
+  --aye: #22c55e;
+  --no: #ef4444;
+  --unknown: #6b7280;
+  --font-display: "Inter Display", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --source-tint: 0.94;
+}
+
+:root.theme-editorial {
+  --bg: #0c0e14;
+  --panel: #161310;
+  --panel-2: #14110d;
+  --line: rgba(218, 165, 32, 0.22);
+  --text: #f0ebe1;
+  --muted: #9c9382;
+  --accent: #d4a017;
+  --aye: #4ade80;
+  --no: #f87171;
+  --unknown: #8b8174;
+  --font-display: "Source Serif Pro", "Cambria", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --source-tint: 0.90;
+}
+
+/* Apply tokens to surfaces. Most existing rules already use var(--X)
+   for these names; the theme-aware bits added here cover typography
+   and the source-pane tint. */
+.map-title { font-family: var(--font-display); }
+.tour-card h3, .legend-strip { font-family: var(--font-display); }
+body, .ring-svg-text, .wedge-label, .ring-label-top, .tour-card,
+.tour-btn, .nav-icon { font-family: var(--font-body); }
+/* Source pane tint — applied to the iframe via a CSS filter so the
+   PublicWhip white doesn't clash with the dark theme. tint=1 means
+   no change; <1 darkens. The hue rotation is theme-specific so the
+   editorial theme's amber accent reads through. */
+#source-frame {
+  filter: brightness(var(--source-tint));
+}
+:root.theme-editorial #source-frame {
+  filter: brightness(var(--source-tint)) sepia(0.08);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.lens-poc {
+  min-height: 100vh;
+  display: grid;
+  /* LTR default (en, hi, most): source LEFT, viz RIGHT.
+     The user reads source content first (left-to-right), then sees
+     the visualisation react on the right. DOM order is map-pane
+     then source-pane; the grid-areas reverse them visually. */
+  grid-template-columns: minmax(420px, 1fr) minmax(420px, 52vw);
+  grid-template-areas: "source viz";
+  background: linear-gradient(180deg, #0b1020 0%, #0d1324 100%);
+}
+.map-pane   { grid-area: viz; }
+.source-pane { grid-area: source; }
+
+/* In RTL the browser auto-flips CSS Grid columns (column 1 lands on
+   the visual right), so the same grid-template-areas above puts the
+   source pane in the reading-first position (visual right) without
+   any explicit override here. */
+
+.map-pane,
+.source-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Divider between panes lives on the source-pane's edge facing the
+   viz pane — flips with direction. */
+.source-pane { border-right: 1px solid var(--line); }
+html[dir="rtl"] .source-pane { border-right: 0; border-left: 1px solid var(--line); }
+
+.pane-bar {
+  height: 68px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.source-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.source-site-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.45);
+  flex-shrink: 0;
+}
+
+.site-nav-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(229, 231, 235, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.site-nav-btn:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.10);
+}
+
+.site-nav-btn:active {
+  transform: translateY(1px);
+}
+
+.nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e5e7eb;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.eyebrow {
+  margin: 0 0 3px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.how-it-works {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 16, 32, 0.6);
+  flex-wrap: wrap;
+}
+
+.hot-topics {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(10, 16, 32, 0.55);
+  flex-wrap: wrap;
+}
+
+.topic-btn {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgba(229, 231, 235, 0.92);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+
+.topic-btn:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.10);
+}
+
+.topic-btn.active {
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+}
+
+.how-step {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.how-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.how-arrow {
+  color: #334155;
+  font-size: 12px;
+}
+
+.source-pane-label h2 {
+  font-size: 16px;
+}
+
+.source-pane-label {
+  flex: 1;
+  min-width: 0;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+h2 {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.home-link,
+.source-link {
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.home-link:hover,
+.source-link:hover {
+  border-color: var(--accent);
+}
+
+.globe-link {
+  min-width: 38px;
+  text-align: center;
+  padding: 8px 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.map-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 420px;
+  background: #020617;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #fff;
+}
+
+#map-frame {
+  background: #020617;
+}
+
+.selection-card {
+  min-height: 156px;
+  padding: 15px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.selection-card.idle {
+  color: var(--muted);
+}
+
+.selection-card p {
+  margin: 6px 0 0;
+}
+
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgba(255,255,255,0.22);
+}
+
+.swatch.aye { background: var(--aye); }
+.swatch.no { background: var(--no); }
+.swatch.unknown { background: var(--unknown); }
+
+.caveat {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.selection-pane-note {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+.source-link {
+  display: inline-block;
+  margin-top: 10px;
+}
+.profile-link {
+  margin-left: 8px;
+}
+
+.source-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab,
+.visualise-btn,
+.url-lens button {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tab.active,
+.visualise-btn.active {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.16);
+  color: #e0f2fe;
+}
+
+.map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.visualise-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+  padding: 10px 18px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.url-lens {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #0b1220;
+}
+
+.url-lens input {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #020617;
+  color: var(--text);
+  padding: 10px 11px;
+  font-size: 13px;
+}
+
+.source-status {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: #111827;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.source-status.warn {
+  color: #fed7aa;
+}
+
+.source-status.ok {
+  color: #bbf7d0;
+}
+
+.visualise-instruction {
+  display: none;
+  padding: 10px 14px;
+  background: rgba(56, 189, 248, 0.13);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+body.visualise-active .visualise-instruction {
+  display: block;
+}
+
+.source-frame-wrap {
+  flex: 1 1 auto;
+  min-height: 480px;
+  /* Match the surrounding dark theme so the 52px top padding (carved
+     out for the floating Back/Forward/Reload pill) doesn't render as
+     a white banner before the iframe paints. */
+  background: var(--panel-2);
+}
+
+body.visualise-active .source-frame-wrap {
+  outline: 3px solid rgba(56, 189, 248, 0.9);
+  outline-offset: -3px;
+}
+
+body.visualise-active #source-frame {
+  cursor: crosshair;
+}
+
+body.visualise-active .source-frame-wrap {
+  cursor: crosshair;
+}
+
+body.visualise-active #map-frame {
+  cursor: default;
+}
+
+/* TWFY bridge panel — shown when TheyWorkForYou tab is active */
+.twfy-bridge {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #0b1220;
+}
+
+body.source-twfy .twfy-bridge {
+  display: flex;
+}
+
+.twfy-notice {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(56, 189, 248, 0.07);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #bae6fd;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.twfy-notice-label {
+  font-weight: 800;
+}
+
+.twfy-open-link {
+  display: inline-block;
+  margin-left: auto;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 4px 10px;
+}
+
+.twfy-open-link:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.twfy-instructions {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.twfy-instructions p {
+  margin: 0 0 4px;
+}
+
+.twfy-format-hint code {
+  color: #7dd3fc;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+.twfy-demos-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.twfy-demo-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.twfy-demo-btn {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.twfy-demo-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Suppress crosshair/glow on source frame when TWFY is active — clicks do nothing */
+body.source-twfy.visualise-active .source-frame-wrap {
+  outline: none;
+  cursor: default;
+}
+
+body.source-twfy.visualise-active #source-frame {
+  cursor: default;
+}
+
+/* Source Lens panel: shown when source-lens tab active, iframe hidden */
+.source-lens-panel {
+  display: none;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.source-lens-active .source-lens-panel {
+  display: flex;
+}
+
+body.source-lens-active .source-frame-wrap {
+  display: none;
+}
+
+body.source-lens-active .url-lens {
+  display: none;
+}
+
+.source-lens-header {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.source-lens-subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.source-lens-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.source-lens-loading {
+  padding: 14px 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.source-lens-loading.warn {
+  color: #fed7aa;
+}
+
+.division-row {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.division-row:hover {
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.division-row.active {
+  background: rgba(56, 189, 248, 0.14);
+  border-left: 3px solid var(--accent);
+  padding-left: 13px;
+}
+
+.division-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 5px;
+}
+
+.division-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.division-row-date {
+  flex-shrink: 0;
+}
+
+.division-row-aye {
+  color: var(--aye);
+  font-weight: 700;
+}
+
+.division-row-no {
+  color: var(--no);
+  font-weight: 700;
+}
+
+.division-row-source {
+  margin-left: auto;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.division-row-source:hover {
+  opacity: 1;
+}
+
+/* ── MP search bar ── */
+.mp-search-wrap {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #070d1a;
+  position: relative;
+  z-index: 10;
+}
+#mp-search-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px;
+}
+#mp-search-input {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: rgba(2, 6, 23, 0.8);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+#mp-search-input::placeholder { color: #334155; }
+#mp-search-input:focus { border-color: rgba(56, 189, 248, 0.5); }
+#mp-search-form button {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+#mp-search-form button:hover { border-color: var(--accent); color: var(--accent); }
+
+.search-results {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 12px;
+  right: 12px;
+  background: #0b1220;
+  border: 1px solid var(--line);
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.search-result-item {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.search-result-item:last-child { border-bottom: 0; }
+.search-result-item:hover { background: rgba(56, 189, 248, 0.07); }
+.search-result-item.focused { background: rgba(56, 189, 248, 0.12); outline: 1px solid rgba(56, 189, 248, 0.3); }
+.search-result-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.search-result-meta {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.search-result-vote {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.search-result-vote::before { content: "↳"; opacity: 0.5; font-size: 10px; }
+.search-result-vote.aye { color: var(--aye); }
+.search-result-vote.no  { color: var(--no); }
+.search-result-vote.unknown { color: var(--unknown); }
+.search-result-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  background: rgba(56, 189, 248, 0.10);
+  color: #bae6fd;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+}
+.search-result-contact:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.18);
+}
+.search-result-contact-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0f2fe;
+  color: #0f172a;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.search-no-results {
+  padding: 11px 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── Tab badges ── */
+.tab-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.tab-badge.native {
+  background: rgba(22, 163, 74, 0.18);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  color: #86efac;
+}
+.tab-badge.mvp {
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #7dd3fc;
+}
+
+/* ── Connector status row ── */
+.connector-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #070d1a;
+  font-size: 11px;
+  align-items: center;
+}
+.connector-label {
+  color: #334155;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  flex-shrink: 0;
+}
+.connector {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: help;
+  user-select: none;
+}
+.connector.active { color: #86efac; }
+.connector.future  { color: #475569; }
+.connector-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.connector.active .connector-dot { background: #22c55e; }
+.connector.future .connector-dot  { background: #1e2d4a; border: 1px solid #334155; }
+.connector-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+.connector.active .connector-badge {
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  color: #86efac;
+}
+.connector.future .connector-badge {
+  background: #111827;
+  border: 1px solid #1e2d4a;
+  color: #334155;
+}
+
+@media (max-width: 920px) {
+  .lens-poc {
+    grid-template-columns: 1fr;
+  }
+
+  .map-pane {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .map-wrap {
+    min-height: 52vh;
+  }
+
+  .source-frame-wrap {
+    min-height: 64vh;
+  }
+}
+
+/* ── Step rail (active state) ─────────────────────────────── */
+.step-rail .how-step {
+  transition: color 160ms ease;
+}
+.step-rail .how-step.is-active {
+  color: #e0f2fe;
+  font-weight: 700;
+}
+.step-rail .how-step.is-active .how-num {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: rgba(56, 189, 248, 0.7);
+  color: #e0f2fe;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+.step-rail .how-step.is-done {
+  color: var(--muted);
+}
+.step-rail .how-step.is-done .how-num {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #86efac;
+}
+
+/* ── Replay tour link ─────────────────────────────────────── */
+.replay-tour {
+  margin-left: 8px;
+  border: 0;
+  background: transparent;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0;
+  cursor: pointer;
+  border-bottom: 1px dotted rgba(148, 163, 184, 0.5);
+  font-family: inherit;
+}
+.replay-tour:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Visualise required hint ──────────────────────────────── */
+.visualise-required-hint {
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+  animation: hint-pulse 240ms ease-out;
+}
+@keyframes hint-pulse {
+  0%   { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Advanced drawer ──────────────────────────────────────── */
+.advanced-drawer {
+  border-bottom: 1px solid var(--line);
+  background: #070d1a;
+}
+.advanced-drawer-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 14px;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.advanced-drawer-summary::-webkit-details-marker { display: none; }
+.advanced-drawer-summary:hover { color: var(--accent); }
+.advanced-drawer-chev {
+  display: inline-block;
+  transition: transform 160ms ease;
+  font-size: 14px;
+  line-height: 1;
+}
+.advanced-drawer[open] .advanced-drawer-chev {
+  transform: rotate(90deg);
+}
+.advanced-drawer[open] .advanced-drawer-summary {
+  border-bottom: 1px solid var(--line);
+  background: #0b1220;
+  color: var(--text);
+}
+.advanced-drawer-body > .url-lens,
+.advanced-drawer-body > .connector-row {
+  border-bottom: 1px solid var(--line);
+}
+.advanced-drawer-body > .connector-row:last-child,
+.advanced-drawer-body > .url-lens:last-child {
+  border-bottom: 0;
+}
+
+/* ── Visualise button pulse (after tour Start) ────────────── */
+@keyframes visualise-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(56, 189, 248, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(56, 189, 248, 0);    }
+}
+.visualise-btn.is-pulsing {
+  position: relative;
+  animation: visualise-pulse 1.4s ease-out 0s 2;
+}
+
+/* ── Onboarding overlay ───────────────────────────────────── */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: onboarding-fade 220ms ease-out;
+}
+@keyframes onboarding-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.onboarding-card {
+  max-width: 460px;
+  width: 100%;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(56, 189, 248, 0.10), transparent 60%),
+    radial-gradient(120% 80% at 100% 100%, rgba(139, 172, 53, 0.08), transparent 60%),
+    linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow:
+    0 30px 70px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(56, 189, 248, 0.10) inset;
+  padding: 26px 26px 22px;
+  color: var(--text);
+  animation: onboarding-rise 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes onboarding-rise {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.onboarding-eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.onboarding-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.onboarding-subtitle {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.onboarding-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  display: grid;
+  gap: 8px;
+}
+.onboarding-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--text);
+}
+.onboarding-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.onboarding-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.onboarding-skip,
+.onboarding-start {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+}
+.onboarding-skip:hover {
+  color: var(--text);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+.onboarding-start {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+}
+.onboarding-start:hover {
+  background: rgba(56, 189, 248, 0.24);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+/* ── Map search (expanding circle) ────────────────────────── */
+.map-search {
+  --slots: 3;
+  --pad: 22px;
+  --size: 36px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  height: var(--size);
+  width: var(--size);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow:
+    0 10px 24px rgba(2, 6, 23, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  /* Must allow the autocomplete dropdown to render outside the pill. */
+  overflow: visible;
+  transition: width 160ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 160ms ease,
+              box-shadow 160ms ease;
+}
+.map-search.is-expanded {
+  width: calc(var(--size) + (var(--slots) * 0.62em) + var(--pad));
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow:
+    0 14px 30px rgba(2, 6, 23, 0.55),
+    0 0 0 3px rgba(56, 189, 248, 0.14);
+}
+.map-search-trigger {
+  flex: 0 0 var(--size);
+  width: var(--size);
+  height: var(--size);
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  transition: color 140ms ease, background 140ms ease;
+}
+.map-search-trigger:hover {
+  color: var(--accent);
+  background: rgba(56, 189, 248, 0.10);
+}
+.map-search-trigger svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.map-search-glyph {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  color: inherit;
+  line-height: 1;
+}
+.map-search.is-expanded .map-search-trigger {
+  color: var(--accent);
+}
+.map-search-form {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.map-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0 12px 0 2px;
+  outline: none;
+  letter-spacing: 0.01em;
+}
+.map-search-input::placeholder {
+  color: rgba(148, 163, 184, 0.55);
+}
+.map-search.is-collapsed .map-search-form {
+  width: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.map-search.is-collapsed .map-search-input {
+  opacity: 0;
+}
+.map-search.is-expanded .map-search-input {
+  opacity: 1;
+  transition: opacity 140ms ease 60ms;
+}
+/* Override generic .search-results when anchored to the map-search container */
+.map-search .search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: auto;
+  min-width: 280px;
+  max-width: 320px;
+  background: rgba(11, 18, 32, 0.96);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 10px;
+  box-shadow: 0 22px 40px rgba(2, 6, 23, 0.55);
+  z-index: 40;
+  overflow: hidden;
+}
+.map-search.is-collapsed .search-results {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-search,
+  .map-search-input {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .map-search { top: 8px; left: 8px; }
+  .map-search.is-expanded {
+    width: calc(var(--size) + (var(--slots) * 0.58em) + 18px);
+  }
+}
+
+/* ── Service menu (concentric "M") ──────────────────────────
+   Geometry note: .service-menu is a zero-size anchor positioned
+   at the M-center point. Every child (center + rings) is placed
+   at left:0/top:0 and centered on the anchor via
+   transform: translate(-50%, -50%). This guarantees every ring
+   shares the exact same center regardless of diameter.
+*/
+.service-menu {
+  position: absolute;
+  right: 36px;          /* anchor X = M-center distance from right edge */
+  bottom: 36px;         /* anchor Y = M-center distance from bottom edge */
+  width: 0;
+  height: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+.service-menu-center,
+.service-action {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  color: #ecfeff;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  pointer-events: auto;
+}
+.service-menu-center {
+  width: 36px;
+  height: 36px;
+  z-index: 2;
+  font-size: 16px;
+  color: #e0f2fe;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  box-shadow:
+    0 14px 30px rgba(2, 6, 23, 0.6),
+    0 0 0 1px rgba(56, 189, 248, 0.25) inset;
+  transform: translate(-50%, -50%);
+}
+.service-menu-center:hover {
+  background: rgba(56, 189, 248, 0.18);
+  box-shadow:
+    0 14px 30px rgba(2, 6, 23, 0.6),
+    0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+.service-menu-center:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.55);
+}
+.service-action {
+  border-style: solid;
+  border-color: rgba(34, 211, 238, 0.86);
+  background: radial-gradient(circle at 28% 28%, rgba(255,255,255,0.18), rgba(56,189,248,0.06) 46%, rgba(15,23,42,0.12) 72%);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.34), 0 8px 20px rgba(2, 6, 23, 0.5);
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 180ms ease,
+              box-shadow 140ms ease,
+              border-color 140ms ease,
+              background 140ms ease;
+}
+.service-action:hover {
+  border-color: rgba(125, 211, 252, 1);
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.55), 0 8px 20px rgba(2, 6, 23, 0.5);
+}
+.service-action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.75), 0 0 20px rgba(34, 211, 238, 0.55);
+}
+.service-action.is-on {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.6), 0 0 0 2px rgba(125, 211, 252, 0.28) inset;
+}
+.service-glyph { line-height: 1; }
+.ring-label {
+  /* Label sits centered on the band midline at the top of the ring.
+     The ring is border-box, so absolute child top:0 == padding edge
+     (i.e. inner edge of the border). Offset by -band/2 to land the
+     label centre on the band midline. */
+  position: absolute;
+  top: -11px;         /* -(band/2) where outer-ring band = 22 */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #e0f2fe;
+  text-shadow: 0 0 6px rgba(2, 6, 23, 0.85), 0 0 10px rgba(34, 211, 238, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
+/* Single Explain ring around the M centre. */
+.service-action.ring-1 { width: 92px; height: 92px; border-width: 22px; }
+
+/* Curved label inside the blue ring 1 band, rendered via SVG textPath.
+   CRITICAL: ring 1 uses border-box with 22px border. An absolutely
+   positioned child with inset:0 lands on the PADDING edge (inside the
+   border), which is only 48x48. To make viewBox 0-92 map 1:1 to actual
+   pixels we need to extend the SVG across the border by 22px on each
+   side. */
+.ring-label-svg {
+  position: absolute;
+  inset: -22px;       /* extend across the 22px border on all sides */
+  pointer-events: none;
+  overflow: visible;
+}
+.ring-svg-text {
+  /* Sized to fit inside the 22px band height (band runs y=0..22 in
+     viewBox). 11px font gives ~13px glyph height which sits cleanly
+     inside the band when centred on the band midline (radius 35). */
+  font: 800 11px ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: #f0f9ff;
+  filter: drop-shadow(0 0 4px rgba(2, 6, 23, 0.85))
+          drop-shadow(0 0 6px rgba(34, 211, 238, 0.6));
+}
+
+/* Explain active state */
+.service-action.ring-1.is-on {
+  border-color: #86efac;
+  box-shadow: 0 0 26px rgba(74, 222, 128, 0.55), 0 0 0 2px rgba(134, 239, 172, 0.32) inset;
+}
+.service-action.ring-1.is-on .ring-svg-text {
+  fill: #ecfccb;
+  font-size: 9px;           /* "EXIT EXPLAIN" is longer — shrink to fit on the same arc */
+  filter: drop-shadow(0 0 4px rgba(2, 6, 23, 0.85))
+          drop-shadow(0 0 8px rgba(74, 222, 128, 0.85));
+}
+
+/* In always-on mode (no cycle) both rings render at full scale at load.
+   This replaces the old [data-level="N"] reveal gates. */
+.service-menu.always-on .service-action.is-shown {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-action {
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .service-menu {
+    right: 30px;       /* mobile anchor: 12px panel padding + 18px (½ of 36px center) */
+    bottom: 30px;
+  }
+  .service-action.ring-1 { width: 86px; height: 86px; border-width: 20px; }
+  .ring-label { font-size: 11px; top: -10px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Minimalist launch overrides
+   ══════════════════════════════════════════════════════════════ */
+
+/* Full-bleed two-pane layout, no chrome */
+.lens-poc { min-height: 100vh; }
+.map-pane { border-right: 1px solid rgba(56, 189, 248, 0.10); padding: 0; }
+.map-pane > .map-wrap {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  position: relative;
+  background: #020617;
+}
+
+/* Source pane is also full-bleed, no header chrome */
+.source-pane { position: relative; padding: 0; }
+.source-frame-wrap {
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+}
+
+/* Floating iframe nav (◀ ▶ ↻) */
+.source-nav-float {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: inline-flex;
+  gap: 6px;
+  padding: 5px 6px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+}
+.source-nav-float .nav-btn {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 999px;
+  background: transparent;
+  color: #cbd5e1;
+  font: 700 14px/1 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+.source-nav-float .nav-btn:hover { color: #e0f2fe; background: rgba(56, 189, 248, 0.14); }
+.source-nav-float .nav-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+/* Glass home dot */
+.home-dot {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 6;
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+  color: #cbd5e1;
+  font-size: 16px; font-weight: 800;
+  text-decoration: none;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.home-dot:hover { color: var(--accent); border-color: rgba(56, 189, 248, 0.45); }
+.home-dot:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.55); }
+
+/* ── Draggable selection-card overlay ────────────────────── */
+.selection-card.is-overlay {
+  position: absolute;
+  z-index: 8;
+  /* Default corner = top-right, below the map-title overlay. */
+  right: 12px;
+  top: 56px;
+  left: auto; bottom: auto;
+  width: 296px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.86);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  cursor: grab;
+  touch-action: none;            /* let Pointer Events drive drag on touch */
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              left 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              top 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              right 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              bottom 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 120ms ease, border-color 120ms ease;
+}
+.selection-card.is-overlay.is-dragging {
+  cursor: grabbing;
+  transition: none;                                     /* live-follow pointer */
+  box-shadow: 0 26px 52px rgba(2, 6, 23, 0.7), 0 0 0 1px rgba(56, 189, 248, 0.45) inset;
+  border-color: rgba(56, 189, 248, 0.55);
+}
+.selection-card.is-overlay .card-body { padding: 14px 14px 12px; }
+.selection-card.is-overlay .eyebrow { margin: 0 0 4px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.selection-card.is-overlay h2 { margin: 0; font-size: 15px; line-height: 1.25; color: var(--text); font-weight: 700; }
+.selection-card.is-overlay p { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.selection-card.is-overlay .legend { margin-top: 10px; }
+.selection-card.is-overlay .source-link { font-size: 12px; margin-top: 8px; }
+.selection-card.is-overlay .selection-pane-note { display: none; }
+
+.card-collapse {
+  position: absolute;
+  top: 6px; right: 8px;
+  width: 22px; height: 22px;
+  border: 0; border-radius: 6px;
+  background: transparent;
+  color: rgba(186, 230, 253, 0.55);
+  font-size: 16px; line-height: 1;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+.card-collapse:hover { color: #e0f2fe; background: rgba(56, 189, 248, 0.14); }
+
+.selection-card.is-overlay.is-collapsed {
+  width: 132px;
+}
+.selection-card.is-overlay.is-collapsed .card-body { padding: 10px 28px 10px 14px; }
+.selection-card.is-overlay.is-collapsed h2,
+.selection-card.is-overlay.is-collapsed p,
+.selection-card.is-overlay.is-collapsed .legend,
+.selection-card.is-overlay.is-collapsed .source-link { display: none; }
+.selection-card.is-overlay.is-collapsed .eyebrow { font-size: 11px; }
+.selection-card.is-overlay.is-collapsed .card-collapse::before { content: ""; }
+.selection-card.is-overlay.is-collapsed .card-collapse { /* keep visible, change glyph via JS */ }
+
+/* ── M menu ring 2: quartered wedge picker ─────────────── */
+.service-action.ring-2 {
+  width: 220px; height: 220px;
+  border: 0;
+  background: none;
+  pointer-events: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: default;
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 200ms ease;
+}
+/* Always-on: ring 2 visible at load; wedges still capture clicks. */
+.service-menu.always-on .ring-2.is-shown {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: none;
+}
+
+.ring-wedge {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e0f2fe;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  pointer-events: auto;
+  display: block;
+  transition: background 140ms ease, color 140ms ease, filter 140ms ease,
+              transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Wedge parting when the search pill expands rightward. NE peels up
+   and right, SE peels down and right, opening a horizontal channel
+   for the search input. SW + NW (left side) stay in place. */
+.service-menu.is-search-open .ring-wedge.wedge-ne {
+  transform: translate(28px, -18px);
+}
+.service-menu.is-search-open .ring-wedge.wedge-se {
+  transform: translate(28px, 18px);
+}
+/* Quadrants: NE = top-right, SE = bottom-right, SW = bottom-left, NW = top-left.
+   Each clip-path keeps a 50% wedge plus a centre hole carved out by a layered
+   radial-gradient mask on the parent. We use polygon clips here. */
+.ring-wedge.wedge-ne { clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%); }
+.ring-wedge.wedge-se { clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%); }
+.ring-wedge.wedge-sw { clip-path: polygon(50% 50%, 50% 100%, 0% 100%, 0% 50%); }
+.ring-wedge.wedge-nw { clip-path: polygon(50% 50%, 0% 50%, 0% 0%, 50% 0%); }
+
+/* Hollow centre: mask out the inner disc so the ring 1 (Explain) stays visible
+   and the M centre isn't covered. Outer radius = 110, inner = 56. */
+.service-action.ring-2 {
+  -webkit-mask: radial-gradient(circle at center, transparent 0 56px, #000 57px);
+          mask: radial-gradient(circle at center, transparent 0 56px, #000 57px);
+}
+
+.ring-wedge:hover { background: rgba(56, 189, 248, 0.22); color: #f0f9ff; }
+.ring-wedge:focus-visible { outline: none; background: rgba(56, 189, 248, 0.28); box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.7) inset; }
+.ring-wedge.active {
+  background: rgba(56, 189, 248, 0.32);
+  color: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.55) inset, 0 0 22px rgba(34, 211, 238, 0.45);
+}
+
+.wedge-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(2, 6, 23, 0.85);
+  pointer-events: none;
+}
+.wedge-ne .wedge-label { top: 18%; right: 20%; }
+.wedge-se .wedge-label { bottom: 18%; right: 20%; }
+.wedge-sw .wedge-label { bottom: 18%; left: 20%; }
+.wedge-nw .wedge-label { top: 18%; left: 20%; }
+
+/* Hairline crosshair separating the four wedges */
+.service-action.ring-2::before,
+.service-action.ring-2::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 0;
+  width: 1px; height: 100%;
+  background: rgba(2, 6, 23, 0.45);
+  pointer-events: none;
+}
+.service-action.ring-2::after {
+  top: 50%; left: 0;
+  width: 100%; height: 1px;
+}
+
+/* Hide every legacy chrome element that was removed from the template
+   but whose CSS still lives in the file. */
+.lens-poc > .map-pane > .pane-bar,
+.lens-poc > .source-pane > .pane-bar,
+.how-it-works,
+.hot-topics,
+.advanced-drawer,
+#source-status,
+#visualise-instruction,
+#visualise-required-hint,
+.onboarding-overlay { display: none !important; }
+
+/* Mobile tweaks */
+@media (max-width: 920px) {
+  /* Single column on small viewports — source on TOP for both LTR
+     and RTL, so the action surface is always reached first. */
+  .lens-poc {
+    grid-template-columns: 1fr;
+    grid-template-areas: "source" "viz";
+  }
+  html[dir="rtl"] .lens-poc {
+    grid-template-columns: 1fr;
+    grid-template-areas: "source" "viz";
+  }
+  .map-pane > .map-wrap, .source-frame-wrap { height: 60vh; }
+  .source-pane { border-right: 0 !important; border-bottom: 1px solid var(--line); }
+  html[dir="rtl"] .source-pane { border-left: 0 !important; border-bottom: 1px solid var(--line); }
+  .service-action.ring-2 { width: 200px; height: 200px;
+    -webkit-mask: radial-gradient(circle at center, transparent 0 50px, #000 51px);
+            mask: radial-gradient(circle at center, transparent 0 50px, #000 51px);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Launch UI v2 — bottom-row controls, map title, right-pane tidy
+   ══════════════════════════════════════════════════════════════ */
+
+/* Map title overlay (top-left of the map) */
+.map-title {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  z-index: 6;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #e0f2fe;
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  border-radius: 10px;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  text-shadow: 0 0 8px rgba(2, 6, 23, 0.6);
+  pointer-events: auto;
+}
+
+/* Legacy bottom-row controls — removed in Commit C. The nav ring
+   inside #service-menu now hosts the Lens/MyGov/Global controls. */
+.control-row, .ctl-btn { display: none !important; }
+
+/* ── Outer nav ring (3 views) ────────────────────────────
+   Sits at the same zero-size anchor as #service-menu. Three icon
+   buttons orbit at radius 140 from the centre, equidistant on the
+   ring. Active icon sits at 6 o'clock (180°); clicking another
+   animates --nav-rotation so that one ends up at 6 o'clock, then
+   navigates after the transition finishes. */
+.nav-ring {
+  position: absolute;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  transform: translate(-50%, -50%) rotate(var(--nav-rotation, 0deg));
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 7;
+}
+.nav-icon {
+  position: absolute;
+  left: 0; top: 0;
+  width: 36px; height: 36px;
+  margin: -18px 0 0 -18px;   /* centre the 36x36 icon on its anchor point */
+  /* Place icon at --icon-angle around radius 140; counter-rotate so
+     the icon body stays axis-aligned (only the glyph orients on top). */
+  transform: rotate(var(--icon-angle, 0deg))
+             translate(0, -140px)
+             rotate(calc(var(--icon-angle, 0deg) * -1));
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  color: #cbd5e1;
+  text-decoration: none;
+  font: 800 14px ui-sans-serif, system-ui, sans-serif;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+  pointer-events: auto;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.nav-icon:hover {
+  color: var(--accent);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.nav-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45), 0 0 0 3px rgba(56, 189, 248, 0.55);
+}
+.nav-icon.is-active {
+  color: #f0f9ff;
+  border-color: #86efac;
+  background: rgba(34, 211, 238, 0.18);
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.4), 0 10px 24px rgba(2, 6, 23, 0.45);
+}
+/* Counter-rotate glyph against parent ring rotation so labels stay upright */
+.nav-glyph {
+  display: inline-block;
+  transform: rotate(calc(var(--nav-rotation, 0deg) * -1));
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+}
+/* Decorative light ring connecting the 3 icons */
+.nav-ring::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0;
+  width: 280px; height: 280px;       /* diameter = 2 * radius */
+  margin: -140px 0 0 -140px;
+  border-radius: 50%;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  pointer-events: none;
+}
+
+/* ── Legend strip at the bottom of the left panel ────────
+   Big and legible — this is the primary on-screen caption for the
+   active map mode. Reads from across the room. */
+.legend-strip {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 7;
+  padding: 12px 20px;
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 999px;
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: 0 14px 32px rgba(2, 6, 23, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  color: #f0f9ff;
+  font: 600 14px ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.02em;
+  display: flex;
+  gap: 18px;
+  max-width: calc(100% - 32px);
+  flex-wrap: nowrap;            /* keep on one line; we use short labels */
+  justify-content: center;
+  white-space: nowrap;
+  /* Don't allow overflow to clip; if a narrow viewport forces it, the
+     strip will get a horizontal scrollbar instead of wrapping into the
+     menu controls. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.legend-strip::-webkit-scrollbar { display: none; }
+.legend-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+/* Bigger, clearer swatches with a faint white ring so they read against
+   both dark and light map regions. */
+.legend-strip .swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 1px rgba(2, 6, 23, 0.45);
+  flex-shrink: 0;
+}
+
+/* S is now the centre of the concentric menu — it lives inside
+   #service-menu and is positioned at the same zero-size anchor as
+   the rings. Override any legacy top-left coords. */
+.service-menu #map-search {
+  position: absolute;
+  left: 0; top: 0;
+  right: auto; bottom: auto;
+  transform: translate(-50%, -50%);
+  z-index: 8;             /* above wedge ring so the pill is hit-testable */
+}
+
+/* Single anchor for the whole menu. Rings, search, nav-ring all
+   centre on this point inside .map-wrap. Anchor chosen so the outer
+   nav ring (radius 140) clears the map's left edge AND the legend
+   strip at the bottom (which can wrap to two rows on smaller widths). */
+.service-menu {
+  right: auto !important;
+  bottom: 245px !important;     /* clears legend strip + Lens icon at 6 o'clock */
+  left: 160px !important;       /* clears the left edge for MyGov icon at angle 300 */
+}
+
+/* Hide the floating Explain Mode button. It stays in the DOM so the M
+   ring delegation still works; M is the only visible Explain control. */
+#explain-mode-btn { display: none !important; }
+
+/* Hide legacy home-dot if any cached template still emits it. */
+.home-dot { display: none !important; }
+
+/* Right pane: floating ◀ ▶ ↻ now overlaps the iframe top, so push the
+   iframe content down a touch so the page's own header is visible. */
+.source-frame-wrap { padding-top: 52px; }
+
+/* Top border on the right pane to match the left/right pane dividers
+   so the top edge doesn't read as a bare white/blank strip. */
+.source-pane { border-top: 1px solid rgba(56, 189, 248, 0.10); }
+
+/* Centred usage hint above the right-pane iframe content. Sits in the
+   same 52px top strip carved out by .source-frame-wrap padding so it
+   doesn't overlap the iframe's own header. */
+.source-pane-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  margin: 0;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #e0f2fe;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 999px;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.source-pane-hint strong { font-weight: 800; color: #f0f9ff; }
+.source-pane-hint .hint-sep {
+  display: inline-block;
+  margin: 0 8px;
+  color: rgba(125, 211, 252, 0.55);
+}
+@media (max-width: 920px) {
+  .source-pane-hint {
+    font-size: 11px;
+    padding: 5px 12px;
+    max-width: calc(100% - 20px);
+    white-space: normal;
+    text-align: center;
+    line-height: 1.35;
+  }
+  .source-pane-hint .hint-sep {
+    margin: 0 4px;
+  }
+}
+
+/* ── Glass overlay when Explain Mode is on ──────────────────
+   Drops a tinted glass layer over BOTH panes so it's obvious the
+   user is in Explain Mode. Sits above the iframes (z-auto) but below
+   the controls (z 6+), so M, S, the card and the floating ◀▶↻ pill
+   remain interactive and crisp on top of the overlay. */
+.map-wrap, .source-frame-wrap { position: relative; }
+.map-wrap::before,
+.source-frame-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: rgba(125, 211, 252, 0);
+  box-shadow: inset 0 0 0 0 transparent;
+  transition: background 220ms ease, box-shadow 220ms ease;
+}
+body.explain-mode-on .map-wrap::before,
+body.explain-mode-on .source-frame-wrap::before {
+  background: rgba(125, 211, 252, 0.10);
+  box-shadow:
+    inset 0 0 0 2px rgba(125, 211, 252, 0.55),
+    inset 0 0 80px rgba(34, 211, 238, 0.22);
+}
+
+/* Bigger Leaflet/map attribution. The actual <a> sits inside the
+   map iframe; map_relay.html injects its own CSS override. */
+
+/* ── Wedge colour-key arc ────────────────────────────────
+   Sits on the same anchor as the ring 2 wedges and fans dots out along
+   the quadrant of the active wedge. Each .key-dot is positioned via
+   --angle (deg, 0 = 12 o'clock) and --radius (px from anchor centre).
+   Initial state radius=110 (outer edge of ring 2 wedge);
+   animated to radius ~152 with a stagger.
+*/
+.wedge-key-arc {
+  position: absolute;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.wedge-key-arc.is-visible { opacity: 1; }
+
+.key-dot {
+  --angle: 0deg;
+  --radius: 110px;
+  position: absolute;
+  left: 0; top: 0;
+  transform-origin: 0 0;
+  /* Convert (angle, radius) → x/y with rotate + translate trick:
+     rotate first, then translate along the new Y axis. */
+  transform: rotate(var(--angle)) translate(0, calc(var(--radius) * -1)) rotate(calc(var(--angle) * -1));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(8, 18, 34, 0.92);
+  border: 1px solid rgba(125, 211, 252, 0.32);
+  color: #e0f2fe;
+  font: 700 10px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  box-shadow: 0 6px 14px rgba(2, 6, 23, 0.55);
+  transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 220ms ease;
+  /* Centre the dot at its anchor instead of placing its top-left there. */
+  margin-left: -50%;
+  margin-top: -50%;
+}
+/* The label needs to render upright; counter-rotate via inner span. */
+.key-dot .key-swatch {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.32);
+  flex: 0 0 auto;
+}
+.wedge-key-arc.is-visible .key-dot {
+  opacity: 1;
+}
+
+/* Make sure the card snap leaves the bottom-row strip clear. The JS
+   snap function reads --card-bottom-clear to know how much vertical
+   space to reserve at the bottom of the map. */
+.map-wrap { --card-bottom-clear: 70px; --card-top-clear: 56px; }
+
+/* ══════════════════════════════════════════════════════════════
+   Commit 1 — De-clutter overrides
+   ══════════════════════════════════════════════════════════════
+   The selection-card overlay and wedge-key-arc are no longer
+   user-facing. Their DOM is kept (the selection-card as a hidden
+   off-screen mirror) so legacy JS that writes to #selection-title
+   etc. doesn't blow up — but they render zero visible chrome. */
+
+.legacy-mirror {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  pointer-events: none;
+}
+.selection-card.legacy-mirror,
+.selection-card.legacy-mirror * {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  font-size: 0 !important;
+  color: transparent !important;
+}
+
+.wedge-key-arc { display: none !important; }
+
+/* Re-centre the S search trigger on the menu anchor. The .map-search
+   wrapper had its translate(-50%,-50%) on the WRAPPER, but the wrapper
+   is a flex row with the S trigger at flex-start; in the collapsed
+   state this rendered the S off-axis. Lock the wrapper at its anchor
+   without transforming it, and centre the trigger explicitly. */
+.service-menu #map-search {
+  transform: none;             /* override the earlier rule */
+  display: grid;
+  grid-template-columns: var(--size) 1fr;
+  align-items: center;
+  /* Centre the wrapper's first column (the trigger) on the menu anchor
+     by shifting the whole wrapper left by half a trigger width and up
+     by half a trigger height. This puts the trigger centre on (0,0). */
+  margin: calc(var(--size) * -0.5) 0 0 calc(var(--size) * -0.5);
+}
+/* The trigger inherits .service-menu-center which has its own
+   translate(-50%, -50%) for the old M-centre layout. Inside #map-search
+   the wrapper already handles centring, so the trigger must NOT
+   translate itself. */
+.service-menu #map-search .map-search-trigger.service-menu-center {
+  transform: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Commit 5 — Onboarding tour overlay
+   ══════════════════════════════════════════════════════════════
+   The backdrop dims the page; the spot is a transparent cutout
+   (drawn via a hard outline that paints darkness AROUND it).
+   The card floats free and is positioned via JS. */
+.tour-overlay {
+  position: fixed; inset: 0;
+  z-index: 9500;
+  pointer-events: none;        /* clicks pass through the backdrop;
+                                  card+buttons re-enable below */
+}
+.tour-overlay[hidden] { display: none !important; }
+.tour-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(2, 6, 23, 0.62);
+  pointer-events: auto;
+  animation: tour-fade-in 220ms ease both;
+}
+.tour-spot {
+  position: absolute;
+  border-radius: 14px;
+  /* The huge outline paints the dimmed area AROUND the spot; the spot
+     itself stays transparent so the underlying UI reads through. */
+  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.62), 0 0 0 2px rgba(125, 211, 252, 0.6) inset;
+  background: transparent;
+  pointer-events: none;
+  transition: left 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              top 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              width 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              height 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tour-overlay .tour-backdrop { display: none; }    /* spot's box-shadow does all the dimming */
+
+.tour-card {
+  position: absolute;
+  z-index: 1;
+  max-width: 340px;
+  padding: 18px 20px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(2, 6, 23, 0.7), 0 0 22px rgba(34, 211, 238, 0.28);
+  color: #f0f9ff;
+  pointer-events: auto;
+  transition: left 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              top 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: tour-fade-in 220ms ease both;
+}
+.tour-card .tour-step-meta {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.7);
+}
+.tour-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  color: #f0f9ff;
+}
+.tour-card p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+.tour-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.tour-btn {
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  background: rgba(15, 23, 42, 0.62);
+  color: #cbd5e1;
+  transition: color 140ms, border-color 140ms, background 140ms;
+}
+.tour-btn:hover { color: #f0f9ff; border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.14); }
+.tour-btn-primary {
+  color: #f0f9ff;
+  border-color: #86efac;
+  background: rgba(34, 211, 238, 0.18);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.32);
+}
+.tour-btn-primary:hover { background: rgba(34, 211, 238, 0.26); border-color: #86efac; }
+.tour-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.55); }
+
+@keyframes tour-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-card, .tour-spot { transition: none !important; animation: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Commit 6 — Theme picker (Glass / Quiet / Editorial)
+   ══════════════════════════════════════════════════════════════ */
+.theme-picker {
+  position: absolute;
+  /* Bottom-right corner of the map pane in LTR (away from the menu
+     cluster at bottom-left). RTL: bottom-left (away from menu at
+     bottom-right). */
+  right: 16px;
+  bottom: 16px;
+  z-index: 9;
+}
+html[dir="rtl"] .theme-picker { right: auto; left: 16px; }
+
+.theme-picker-trigger {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+  color: #cbd5e1;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+.theme-picker-trigger:hover { color: var(--accent); border-color: rgba(56, 189, 248, 0.45); transform: rotate(30deg); }
+.theme-picker-trigger:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.55); }
+.theme-picker-trigger[aria-expanded="true"] { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+
+.theme-picker-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  width: 260px;
+  padding: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(125, 211, 252, 0.32);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.65), 0 0 22px rgba(34, 211, 238, 0.18);
+  display: flex; flex-direction: column; gap: 8px;
+  animation: tour-fade-in 180ms ease both;
+}
+html[dir="rtl"] .theme-picker-popover { right: auto; left: 0; }
+.theme-picker-popover[hidden] { display: none !important; }
+.theme-picker-title {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(186, 230, 253, 0.7);
+}
+
+.theme-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
+  color: #e0f2fe;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, transform 140ms;
+}
+.theme-card:hover { background: rgba(56, 189, 248, 0.10); border-color: rgba(56, 189, 248, 0.4); }
+.theme-card.is-active {
+  border-color: #86efac;
+  background: rgba(34, 211, 238, 0.14);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.28);
+}
+.theme-card strong { display: block; font-size: 13px; font-weight: 700; color: #f0f9ff; }
+.theme-card em { display: block; font-style: normal; font-size: 11px; color: rgba(186, 230, 253, 0.65); margin-top: 1px; }
+.theme-card-action { color: #cbd5e1; }
+
+.theme-swatch {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  color: #f0f9ff;
+}
+.theme-swatch-glass     { background: linear-gradient(135deg, #0b1020, #1e3a5f); }
+.theme-swatch-quiet     { background: linear-gradient(135deg, #0a0e1a, #7dd3fc 130%); }
+.theme-swatch-editorial { background: linear-gradient(135deg, #14110d, #d4a017 130%); }
+.theme-swatch-replay    { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); }
+
+.theme-picker-rule {
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  margin: 6px 0 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Commit 7 — Accessibility pass
+   ══════════════════════════════════════════════════════════════ */
+
+/* Consistent focus ring across every interactive element. Skips
+   elements that already define a focus-visible style of their own. */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(125, 211, 252, 0.75);
+  outline-offset: 2px;
+}
+
+/* Screen-reader-only utility for any text we want announced but
+   not visible (used by the legacy mirror already; codify the class). */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Reduced motion: kill the rotation + parting + theme-picker spin. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-ring, .nav-glyph,
+  .ring-wedge,
+  .service-action,
+  .map-search,
+  .theme-picker-trigger,
+  .selection-card.is-overlay {
+    transition: none !important;
+    animation: none !important;
+  }
+  .theme-picker-trigger:hover { transform: none !important; }
+}
+
+/* Mobile touch-target floor: 44×44 for all primary controls.
+   Applies in addition to existing mobile rules above. */
+@media (max-width: 920px) {
+  .nav-icon { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+  .map-search-trigger, .ctl-btn, .theme-picker-trigger,
+  .source-nav-float .nav-btn { width: 44px; height: 44px; }
+  .service-menu .map-search { --size: 44px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Commit 8 — Mobile single-panel UX
+   ══════════════════════════════════════════════════════════════
+   Below 900px the layout switches to single-panel mode: only the
+   active pane (.source-pane or .map-pane) is visible. A sticky
+   bottom toolbar lets the user switch panes, commit a Visualise
+   intent, and toggle Explain Mode.
+
+   Above 900px the toolbar is hidden and the split-view rules from
+   the existing 920px block continue to apply. */
+
+@media (max-width: 920px) {
+  /* Single column already inherited from the 920px block. Override
+     the grid-template-areas to put whichever pane is active on top;
+     the inactive pane is hidden entirely so the active one gets the
+     full viewport height. */
+  .lens-poc {
+    grid-template-columns: 1fr;
+    grid-template-areas: "active";
+  }
+
+  /* Show only the pane named by body[data-mobile-view]. The other
+     pane is removed from layout so we don't double-load anything and
+     the iframe state survives the toggle (display:none preserves DOM,
+     including iframe currentSrc + scroll). */
+  body[data-mobile-view="source"] .source-pane { grid-area: active; display: flex; }
+  body[data-mobile-view="source"] .map-pane    { display: none; }
+  body[data-mobile-view="map"]    .map-pane    { grid-area: active; display: flex; }
+  body[data-mobile-view="map"]    .source-pane { display: none; }
+
+  /* Active pane fills the viewport (minus toolbar height). */
+  .source-pane, .map-pane { min-height: 100vh; }
+  .source-frame-wrap { height: auto; flex: 1 1 auto; padding-bottom: 72px; }
+  .map-pane > .map-wrap { height: auto; flex: 1 1 auto; padding-bottom: 72px; }
+
+  /* Reset the desktop borders — pane edges are not adjacent in
+     single-panel mode. */
+  .source-pane,
+  html[dir="rtl"] .source-pane { border: 0 !important; }
+
+  /* The map title overlay would compete with the sticky toolbar.
+     Push it slightly inboard. */
+  .map-title { font-size: 12px; padding: 5px 10px; }
+
+  /* Mobile-only sticky toolbar. */
+  .mobile-toolbar {
+    display: flex !important;
+    position: fixed;
+    left: 0; right: 0;
+    bottom: 0;
+    z-index: 1000;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(8, 18, 34, 0.94);
+    border-top: 1px solid rgba(56, 189, 248, 0.32);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    box-shadow: 0 -10px 30px rgba(2, 6, 23, 0.55);
+    gap: 4px;
+  }
+  .mob-btn {
+    flex: 1 1 0;
+    min-height: 56px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
+    padding: 6px 4px;
+    border: 0;
+    background: transparent;
+    border-radius: 10px;
+    color: #cbd5e1;
+    font: 600 11px/1.1 var(--font-body);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .mob-btn:hover { background: rgba(56, 189, 248, 0.10); color: #f0f9ff; }
+  .mob-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.7);
+  }
+  .mob-btn.is-active {
+    background: rgba(56, 189, 248, 0.18);
+    color: #f0f9ff;
+    box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.4) inset;
+  }
+  .mobile-toolbar .mob-btn[data-mobile-action="explain"][aria-pressed="true"] {
+    background: rgba(74, 222, 128, 0.18);
+    color: #ecfccb;
+    box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.42) inset;
+  }
+  .mob-icon { font-size: 18px; line-height: 1; }
+  .mob-label { display: block; font-size: 11px; }
+
+  /* Toast banner above the toolbar. */
+  .mobile-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 1001;
+    padding: 9px 16px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(125, 211, 252, 0.45);
+    border-radius: 999px;
+    color: #f0f9ff;
+    font: 600 13px/1.2 var(--font-body);
+    box-shadow: 0 14px 32px rgba(2, 6, 23, 0.6);
+    max-width: calc(100% - 32px);
+    text-align: center;
+    pointer-events: none;
+    animation: mobile-toast-in 220ms ease both;
+  }
+  .mobile-toast[hidden] { display: none !important; }
+  @keyframes mobile-toast-in {
+    from { opacity: 0; transform: translate(-50%, 8px); }
+    to { opacity: 1; transform: translateX(-50%); }
+  }
+}
+
+/* Toolbar element exists in the DOM always (so JS can address it) but
+   stays hidden on desktop. Above 920px the rule below wins; below it
+   the @media block above sets display:flex. */
+.mobile-toolbar[hidden] { display: none !important; }
+.mobile-toast[hidden]   { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-toast { animation: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Hotfix — S search visibility + inline autocomplete
+   ══════════════════════════════════════════════════════════════
+   Reason: the earlier grid-override on .service-menu #map-search
+   collapsed the input column to its intrinsic width even when
+   .is-expanded was set, so typed text rendered into a ~29px box
+   and looked invisible. Fix: when expanded, switch back to a flex
+   row that the .is-expanded width rule can actually grow, and
+   explicitly enforce visible text styling that no other rule
+   should be allowed to override. */
+
+.service-menu #map-search.is-expanded {
+  display: flex;                  /* grow with the .is-expanded width */
+  align-items: center;
+  /* Anchor: trigger centre on (0,0), pill grows rightward. */
+  margin: calc(var(--size) * -0.5) 0 0 calc(var(--size) * -0.5);
+  /* Lock the pill rounded on BOTH ends. */
+  border-radius: 999px;
+  overflow: visible;
+}
+.service-menu #map-search.is-expanded .map-search-form {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* Pill width when expanded — fixed comfortable size, NOT slot-driven.
+   The slot calc was undersized for usable autocomplete previews. */
+.map-search.is-expanded {
+  width: 240px;
+}
+@media (max-width: 920px) {
+  .map-search.is-expanded { width: min(86vw, 320px); }
+}
+
+/* Input — always-visible text styles, locked against every earlier
+   colour/opacity rule (the legacy mirror's universal-selector colour
+   override almost won this fight). */
+.map-search-input,
+input.map-search-input,
+.service-menu #map-search .map-search-input {
+  color: #e8f1ff !important;
+  -webkit-text-fill-color: #e8f1ff !important;
+  caret-color: #7dd3fc !important;
+  opacity: 1 !important;
+  background: transparent !important;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0 16px 0 6px;
+  height: 100%;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  z-index: 2;
+  position: relative;
+}
+/* When collapsed, hide cleanly so the S sits on its own. */
+.map-search.is-collapsed .map-search-input {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.map-search.is-expanded .map-search-input {
+  opacity: 1 !important;
+  transition: opacity 140ms ease 60ms;
+}
+.map-search-input::placeholder {
+  color: rgba(186, 230, 253, 0.45) !important;
+  -webkit-text-fill-color: rgba(186, 230, 253, 0.45) !important;
+}
+
+/* ── Inline ghost completion ───────────────────────────────
+   A read-only mirror layer sits behind the real input. The typed
+   prefix is rendered transparent; the completion tail is rendered
+   muted. The actual <input> on top shows the user's typed text in
+   the primary colour, so the visual is:
+       user text (bright)  + ghost tail (muted)
+*/
+.map-search-form { position: relative; }
+.map-search-ghost {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  font-family: inherit;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  color: rgba(186, 230, 253, 0.45);
+}
+.map-search-ghost .typed {
+  color: transparent;       /* user-typed prefix is invisible here —
+                                the real <input> on top shows it bright */
+  white-space: pre;
+}
+.map-search-ghost .tail {
+  color: rgba(186, 230, 253, 0.45);
+  white-space: pre;
+}
+
+/* Hide the legacy dropdown — inline autocomplete replaces it.
+   Keep the element in DOM so JS that still queries it doesn't break. */
+#search-results,
+.map-search .search-results,
+.map-search-results {
+  display: none !important;
+}
+
+/* Kill the type="search" decoration cross-browser (cancel buttons
+   etc) so the ghost layer aligns cleanly with the input glyphs. */
+.map-search-input::-webkit-search-cancel-button,
+.map-search-input::-webkit-search-decoration,
+.map-search-input::-webkit-search-results-button,
+.map-search-input::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+
+

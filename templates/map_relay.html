@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyGov Map</title>
+  <base href="/static/promap/">
+  <script type="module" crossorigin src="/static/promap/assets/index-uJtvkwRy.js"></script>
+  <link rel="stylesheet" crossorigin href="/static/promap/assets/index-CvBPfDPn.css">
+  <style>
+    html, body, #root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    /* The map bundle includes demo controls + an empty-state card. Hide both for the hackathon lens. */
+    .mygov-map-controls { display: none !important; }
+    .mygov-panel-empty { display: none !important; }
+    /* Hide the React bundle's own topbar / header chrome so the parent
+       page's "How MPs voted" title sits directly on the map and the
+       card snap-corners align with the visible map area, not with
+       iframe chrome. */
+    .mygov-map-topbar,
+    .mygov-map-header,
+    .mygov-map-shell > header,
+    .mygov-map-shell > .header { display: none !important; }
+    /* Critical: when embedded in an iframe, the map canvas can collapse to 0 height.
+       Force the frame/canvas to fill the viewport. */
+    .mygov-map-page, .mygov-map-shell { height: 100% !important; }
+    .mygov-map-shell { display: flex !important; flex-direction: column !important; }
+    .mygov-map-frame { flex: 1 1 auto !important; min-height: 0 !important; }
+    .mygov-map-canvas { height: 100% !important; min-height: 420px !important; }
+    /* Leaflet attribution: small + subtle. Reads if you go looking
+       for it, doesn't compete with the viz. */
+    .leaflet-control-attribution {
+      font-size: 11px !important;
+      line-height: 1.2 !important;
+      padding: 2px 6px !important;
+      opacity: 0.55 !important;
+      background: transparent !important;
+      color: #cbd5e1 !important;
+    }
+    .leaflet-control-attribution a {
+      font-size: inherit !important;
+      color: #94a3b8 !important;
+    }
+    .leaflet-control-attribution:hover { opacity: 1 !important; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    var _pendingSetMode = null;
+    var _readySent = false;
+    var _pollCount = 0;
+
+    function _applySetMode(msg) {
+      var api = window.mygovConstituencyMap;
+      if (!api || typeof api.setConstituencyColours !== 'function') return false;
+      var mode = msg.mode;
+      var data = msg.data || {};
+      if (mode === 'votes' || mode === 'vote') api.setConstituencyColours('votes', data);
+      else if (mode === 'constituency') api.setConstituencyColours('none', {});
+      else if (mode === 'highlight') api.setConstituencyColours('votes', data);
+      else if (mode === 'issue') api.setConstituencyColours('issue', data);
+      else if (mode === 'source-confidence') api.setConstituencyColours('turnout', data);
+      else if (mode === 'party') api.setConstituencyColours('votes', data);
+      else if (mode === 'gender') api.setConstituencyColours('votes', data);
+      else if (mode === 'rebel-rate') api.setConstituencyColours('votes', data);
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'mygov:map:applied' }, window.location.origin);
+      }
+      return true;
+    }
+
+    function _notifyReadyOnce() {
+      if (_readySent) return;
+      _readySent = true;
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'mygov:map:ready' }, window.location.origin);
+      }
+    }
+
+    function relaySelection(e) {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'mygov:constituency:selected', detail: e.detail }, window.location.origin);
+      }
+    }
+
+    window.addEventListener('mygov:constituency:selected', relaySelection);
+    window.addEventListener('mygov:constituency:sel', relaySelection);
+
+    window.addEventListener('message', function (e) {
+      if (e.origin !== window.location.origin || !e.data || e.data.type !== 'mygov:map:setMode') return;
+      var api = window.mygovConstituencyMap;
+      if (api && typeof api.setConstituencyColours === 'function') {
+        _applySetMode(e.data);
+      } else {
+        _pendingSetMode = e.data;
+      }
+    });
+
+    // Poll until the promap React API mounts, then apply any buffered message.
+    // Cap at 100 attempts (10s) to avoid infinite polling on mount failure.
+    var _readyPoll = setInterval(function () {
+      _pollCount++;
+      var api = window.mygovConstituencyMap;
+      if (api && typeof api.setConstituencyColours === 'function') {
+        clearInterval(_readyPoll);
+        _notifyReadyOnce();
+        if (_pendingSetMode) {
+          var msg = _pendingSetMode;
+          _pendingSetMode = null;
+          _applySetMode(msg);
+        }
+        return;
+      }
+      if (_pollCount >= 100) {
+        clearInterval(_readyPoll);
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'mygov:map:failed' }, window.location.origin);
+        }
+      }
+    }, 100);
+  </script>
+</body>
+</html>

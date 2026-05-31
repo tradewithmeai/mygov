@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if q %}Search: {{ q }} — {% endif %}PublicWhip</title>
+<link rel="stylesheet" href="/static/publicwhip.css">
+</head>
+<body data-explain-minimal="true">
+<div class="pw-shell">
+  <div class="pw-identity-bar">
+    <span class="pw-identity-badge">MyGov Source Lens</span>
+    <span class="pw-identity-sep">·</span>
+    Public parliamentary records
+    <span class="pw-identity-sep">·</span>
+    Inspired by Public Whip-style civic data browsing
+    <span class="pw-identity-sep">·</span>
+    <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+  </div>
+  <header class="pw-topbar">
+    <a class="pw-brand" href="/publicwhip">the Public Whip</a>
+    <div class="pw-spacer"></div>
+    <nav class="pw-nav">
+      <a href="/publicwhip" class="pw-nav-link">Home</a>
+      <a href="/publicwhip/divisions" class="pw-nav-link">Divisions</a>
+      <a href="/publicwhip/mps" class="pw-nav-link pw-nav-current">MPs</a>
+      <a href="/publicwhip/lords" class="pw-nav-link">Lords</a>
+      <a href="/publicwhip/msps" class="pw-nav-link">MSPs</a>
+      <a href="/publicwhip/policies" class="pw-nav-link">Policies</a>
+      <!-- Removed to prevent recursive split-screen-in-split-screen inside the iframe -->
+    </nav>
+  </header>
+
+  <main class="pw-main">
+    <section class="pw-search-section">
+      <form class="pw-search-form" action="/publicwhip/search" method="get">
+        <input class="pw-search-input" type="search" name="q" value="{{ q | e }}"
+               placeholder="MP name, constituency, party, or vote topic…" autofocus>
+        <button class="pw-search-btn" type="submit" title="Run search in PublicWhip mirror">Search</button>
+      </form>
+    </section>
+
+    {% if q %}
+      <p class="pw-result-summary">
+        {% set total = mp_results | length + division_results | length %}
+        {% if total == 0 %}
+          No results for <strong>{{ q | e }}</strong>.
+        {% else %}
+          {{ total }} result{{ 's' if total != 1 else '' }} for <strong>{{ q | e }}</strong>
+        {% endif %}
+      </p>
+
+      {% if mp_results %}
+      <section class="pw-section">
+        <h2 class="pw-section-title" data-explainable="true" data-explain-type="section" data-context="search-mps">MPs <span class="pw-section-count">{{ mp_results | length }}</span></h2>
+        <ul class="pw-mp-list">
+          {% for mp in mp_results %}
+          <li data-explainable="true" data-explain-type="mp" data-member-id="{{ mp.member_id }}">
+            <a class="pw-link pw-mp-list-name" href="/publicwhip/mp/{{ mp.member_id }}" data-explainable="true" data-explain-type="mp" data-member-id="{{ mp.member_id }}">{{ mp.name }}</a>
+            <a class="pw-contact-mp pw-contact-mp--compact"
+               href="https://www.writetothem.com/"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Contact this MP via WriteToThem"
+               aria-label="Contact {{ mp.name }} via WriteToThem">
+              <span class="pw-contact-logo" aria-hidden="true">MP</span>
+              <span>Contact</span>
+            </a>
+            <span class="pw-muted">{{ mp.party or '' }}{% if mp.constituency %} · {{ mp.constituency }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if division_results %}
+      <section class="pw-section">
+        <h2 class="pw-section-title" data-explainable="true" data-explain-type="section" data-context="search-divisions">Divisions <span class="pw-section-count">{{ division_results | length }}</span></h2>
+        <table class="pw-table">
+          <thead>
+            <tr>
+              <th>Division</th>
+              <th class="pw-num-col">Date</th>
+              <th class="pw-num-col">Ayes</th>
+              <th class="pw-num-col">Noes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in division_results %}
+            <tr data-lens-division-id="{{ d.division_id }}"
+                data-explainable="true"
+                data-explain-type="division"
+                data-division-id="{{ d.division_id }}">
+              <td><a class="pw-link" href="/publicwhip/division/{{ d.division_id }}" data-lens-division-id="{{ d.division_id }}" data-explainable="true" data-explain-type="division" data-division-id="{{ d.division_id }}">{{ d.title or 'Untitled' }}</a></td>
+              <td class="pw-num-col pw-muted">{{ (d.division_date or '')[:10] }}</td>
+              <td class="pw-num-col pw-aye">{{ d.aye_count or '—' }}</td>
+              <td class="pw-num-col pw-no">{{ d.no_count or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
+
+    {% else %}
+      <p class="pw-result-summary">Enter a name, constituency, party, or vote topic to search.</p>
+    {% endif %}
+  </main>
+
+  <div class="pw-bluebox">
+    <h3>About the Project</h3>
+    <p>Public Whip helped pioneer open parliamentary vote analysis in the UK.
+    It is a not-for-profit, open source project.
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">Visit publicwhip.org.uk →</a></p>
+    <p>This view uses UK Parliament open data API records only.</p>
+  </div>
+  <footer class="pw-footer">
+    Data sourced from the UK Parliament open data API. Public record only.
+    <span class="pw-footer-sep">·</span>
+    <a href="https://www.publicwhip.org.uk" target="_blank" rel="noopener">publicwhip.org.uk</a>
+  </footer>
+</div>
+</body>
+</html>
