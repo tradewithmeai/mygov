@@ -62,7 +62,6 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const dataUrl = shell?.dataset.feasibilityUrl || '/api/global/feasibility';
 const activeLocale = shell?.dataset.locale || 'en';
 const pageParams = new URLSearchParams(window.location.search);
-const EARTH_AXIAL_TILT_RAD = THREE.MathUtils.degToRad(-23.44);
 
 function toLensUrl(country) {
   const cc = encodeURIComponent(((country && country.iso2) || 'GB').toUpperCase());
@@ -111,7 +110,6 @@ let scene;
 let camera;
 let renderer;
 let globeGroup;
-let axialGroup;
 let spinGroup;
 let markerGroup;
 let raycaster;
@@ -372,28 +370,13 @@ function createGlobe(countries) {
   rim.position.set(-4, -2, -3);
   scene.add(rim);
 
-  // Nested transform: outer globeGroup carries the user-orbit + the
-  // fixed axial tilt (Earth's ~23.5° obliquity, applied around Z so
-  // the pole leans to the user's right). Inner spinGroup carries the
-  // earth, borders, markers — and is the ONLY thing rotated by the
-  // idle auto-spin, so the spin happens around the tilted pole and
-  // continents no longer precess against a vertical world-Y axis.
+  // North-up globe: globeGroup handles focus/orbit and spinGroup handles idle spin.
   globeGroup = new THREE.Group();
   globeGroup.rotation.y = -0.54;            // initial framing yaw
-  // ~23.5° axial tilt. Negative Z rotation leans the north pole to
-  // the LEFT (west) in the image — matching Earth-style obliquity as
-  // commonly drawn with the pole offset toward the camera's left.
-  // (The composition with the existing -0.54 yaw flips the visible
-  // direction vs. a bare Z rotation, so the sign here is the one
-  // verified by eye to give west-lean.)
   scene.add(globeGroup);
 
-  axialGroup = new THREE.Group();
-  axialGroup.rotation.z = EARTH_AXIAL_TILT_RAD;
-  globeGroup.add(axialGroup);
-
   spinGroup = new THREE.Group();
-  axialGroup.add(spinGroup);
+  globeGroup.add(spinGroup);
 
   const earthRadius = 2.2;
   const earth = new THREE.Mesh(
@@ -488,9 +471,7 @@ function addCountryBorders(radius) {
       });
       const borders = new THREE.LineSegments(geometry, material);
       borders.renderOrder = 1;
-      // Borders share the rest of the earth's rotation, so attach to
-      // spinGroup (not globeGroup) — keeps continents locked to the
-      // tilted spin axis instead of precessing around world-Y.
+      // Borders share the earth's idle rotation.
       spinGroup.add(borders);
     })
     .catch((error) => {
@@ -801,10 +782,7 @@ function animate(time = 0) {
   }
 
   if (!reducedMotion && !dragging && !focusAnimating) {
-    // Idle spin around the tilted pole. At 60fps and 2π per rotation,
-    // 0.0017 rad/frame ≈ 0.102 rad/s ≈ 61.6s per full rotation —
-    // stately, demo-friendly, hints at planetary motion. Rotates the
-    // inner spinGroup so the tilt stays fixed in world space.
+    // Idle north-up spin. At 60fps this is roughly one full rotation per minute.
     spinGroup.rotation.y += 0.0017;
   }
 
