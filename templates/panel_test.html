@@ -276,5 +276,8 @@
 </script>
 <script src="/static/tour.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
 <script src="/static/theme-picker.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+<!-- Autopilot demo (hard-disabled by default; activates only with ?autopilot=1) -->
+<link rel="stylesheet" href="/static/demo-flow.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+<script src="/static/demo-flow.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
 </body>
 </html>

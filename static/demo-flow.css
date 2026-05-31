@@ -1,0 +1,82 @@
+/* MyGov autopilot demo — cursor + caption + stop control.
+   Loaded only when ?autopilot=1 is present (see demo-flow.js gate). */
+
+.demo-cursor {
+  position: fixed;
+  left: 0; top: 0;
+  width: 28px; height: 28px;
+  margin-left: -14px; margin-top: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #7dd3fc 38%, rgba(125,211,252,0.0) 75%);
+  box-shadow:
+    0 0 0 2px rgba(125,211,252,0.85),
+    0 0 18px rgba(125,211,252,0.6),
+    0 0 40px rgba(56,189,248,0.55);
+  pointer-events: none;
+  z-index: 100000;
+  transition: transform 720ms cubic-bezier(0.32, 0.72, 0.24, 1.05);
+  will-change: transform;
+}
+.demo-cursor.is-clicking {
+  transform: scale(0.72) !important;
+  transition: transform 90ms ease-out;
+}
+.demo-ripple {
+  position: fixed;
+  left: 0; top: 0;
+  width: 20px; height: 20px;
+  margin-left: -10px; margin-top: -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(125,211,252,0.85);
+  pointer-events: none;
+  z-index: 99999;
+  animation: demo-ripple 600ms ease-out forwards;
+}
+@keyframes demo-ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+.demo-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  z-index: 100001;
+  max-width: min(560px, 90vw);
+  padding: 14px 22px;
+  background: rgba(8, 14, 26, 0.94);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 16px;
+  color: #f0f9ff;
+  font: 600 15px/1.5 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.65), 0 0 22px rgba(34, 211, 238, 0.25);
+  opacity: 0;
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+.demo-caption.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.demo-stop {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100002;
+  padding: 9px 18px;
+  background: rgba(220, 38, 38, 0.92);
+  color: #fff;
+  font: 700 13px/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.55);
+  cursor: pointer;
+}
+.demo-stop:hover { background: rgba(239, 68, 68, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-cursor { transition: none !important; }
+  .demo-ripple { animation-duration: 200ms; }
+  .demo-caption { transition: none !important; }
+}

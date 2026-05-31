@@ -128,6 +128,10 @@ let focusTargetYaw = null;
 let focusTargetPitch = null;
 let activeFilter = null;
 
+// Autopilot demo hooks (no-op when /demo-flow.js isn't loaded).
+let autopilotSpinMul = 1;     // idle spin speed multiplier
+let autopilotHold = false;    // freeze the spin while showing a country
+
 function lerpAngle(current, target, t) {
   const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
   return current + delta * t;
@@ -799,9 +803,11 @@ function animate(time = 0) {
     }
   }
 
-  if (!reducedMotion && !dragging && !focusAnimating) {
-    // Idle north-up spin. At 60fps this is roughly one full rotation per minute.
-    spinGroup.rotation.y += 0.0017;
+  if (!reducedMotion && !dragging && !focusAnimating && !autopilotHold) {
+    // Idle north-up spin. At 60fps this is roughly one full rotation
+    // per minute. Multiplier is normally 1; demo autopilot can boost
+    // for the fast-spin scenes.
+    spinGroup.rotation.y += 0.0017 * autopilotSpinMul;
   }
 
   markers.forEach((marker) => {
@@ -857,6 +863,39 @@ function start() {
       bindCountrySearch();
       bindLegendFilters();
       loading.hidden = true;
+
+      // Expose autopilot demo API once the globe is fully mounted.
+      window.__autopilotGlobe = {
+        ready: true,
+        fastSpin: function (mul) {
+          autopilotHold = false;
+          autopilotSpinMul = Math.max(1, Number(mul) || 10);
+        },
+        normalSpin: function () {
+          autopilotHold = false;
+          autopilotSpinMul = 1;
+        },
+        // Stop the spin, focus on the country, populate the side card.
+        // Returns a promise that resolves when the focus animation
+        // settles (so the demo can advance off an event, not a sleep).
+        stopAt: function (iso2) {
+          var target = countriesData.find(function (c) {
+            return (c.iso2 || '').toUpperCase() === String(iso2).toUpperCase();
+          });
+          if (!target) return Promise.resolve();
+          autopilotHold = true;
+          autopilotSpinMul = 1;
+          selectCountry(target);
+          focusCountryOnGlobe(target);
+          return new Promise(function (resolve) {
+            var t0 = Date.now();
+            (function tick() {
+              if (!focusAnimating || Date.now() - t0 > 4000) resolve();
+              else window.setTimeout(tick, 80);
+            })();
+          });
+        },
+      };
     })
     .catch((error) => {
       loading.textContent = `Could not load globe data: ${error.message}`;
