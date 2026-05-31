@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MyGov Map</title>
   <base href="/static/promap/">
-  <script type="module" crossorigin src="/static/promap/assets/index-uJtvkwRy.js"></script>
-  <link rel="stylesheet" crossorigin href="/static/promap/assets/index-CvBPfDPn.css">
+  <script type="module" crossorigin src="{{ promap_js | default('/static/promap/assets/index-uJtvkwRy.js') }}"></script>
+  <link rel="stylesheet" crossorigin href="{{ promap_css | default('/static/promap/assets/index-CvBPfDPn.css') }}">
   <style>
     html, body, #root { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     /* The map bundle includes demo controls + an empty-state card. Hide both for the hackathon lens. */

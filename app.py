@@ -1752,7 +1752,27 @@ def api_lens_recognise_url():
 
 @app.route("/map/relay")
 def map_relay():
-    return render_template("map_relay.html")
+    assets_dir = os.path.join(app.root_path, "static", "promap", "assets")
+    js_asset = "/static/promap/assets/index-uJtvkwRy.js"
+    css_asset = "/static/promap/assets/index-CvBPfDPn.css"
+    try:
+        js_candidates = sorted(
+            [f for f in os.listdir(assets_dir) if f.startswith("index-") and f.endswith(".js")],
+            key=lambda f: os.path.getmtime(os.path.join(assets_dir, f)),
+            reverse=True,
+        )
+        css_candidates = sorted(
+            [f for f in os.listdir(assets_dir) if f.startswith("index-") and f.endswith(".css")],
+            key=lambda f: os.path.getmtime(os.path.join(assets_dir, f)),
+            reverse=True,
+        )
+        if js_candidates:
+            js_asset = f"/static/promap/assets/{js_candidates[0]}"
+        if css_candidates:
+            css_asset = f"/static/promap/assets/{css_candidates[0]}"
+    except OSError:
+        pass
+    return render_template("map_relay.html", promap_js=js_asset, promap_css=css_asset)
 
 
 @app.route("/compare")
