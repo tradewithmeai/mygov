@@ -1761,6 +1761,22 @@ def constituency_map_pro(subpath=""):
     )
 
 
+@app.route("/ab_map")
+def ab_map():
+    variant = request.args.get("variant", "a").lower()
+    if variant not in ("a", "b"):
+        variant = "a"
+    return render_template("ab_map.html", variant=variant)
+
+
+@app.route("/ab_map/<variant_id>")
+def ab_map_variant(variant_id):
+    v = (variant_id or "").lower()
+    if v not in ("a", "b"):
+        return redirect("/ab_map", 302)
+    return redirect(f"/ab_map?variant={v}", 302)
+
+
 @app.route("/api/telemetry", methods=["POST"])
 def telemetry():
     data = request.get_json(silent=True) or {}

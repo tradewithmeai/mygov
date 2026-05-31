@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A/B Map — MyGov</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #080c14; color: #e2e8f0; font-family: system-ui, sans-serif; }
+
+#ab-bar {
+  height: 48px;
+  background: #0f1724;
+  border-bottom: 1px solid #243050;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+#variant-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.4);
+  color: #93c5fd;
+  white-space: nowrap;
+}
+
+.ab-btn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: 1px solid #243050;
+  color: #94a3b8;
+  background: transparent;
+  transition: all 0.15s;
+}
+.ab-btn:hover { border-color: #3b82f6; color: #93c5fd; }
+.ab-btn.active { background: #1e40af; border-color: #3b82f6; color: #fff; }
+
+#spacer { flex: 1; }
+
+#source-lens-link {
+  font-size: 0.78rem;
+  padding: 5px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #34d399;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+#source-lens-link:hover { background: rgba(16,185,129,0.2); }
+
+#map-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 48px);
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<div id="ab-bar">
+  <span id="variant-badge">
+    {% if variant == "a" %}Variant A — Claude Map{% else %}Variant B — Pro 5.5 Map{% endif %}
+  </span>
+
+  <a href="/ab_map?variant=a" class="ab-btn {% if variant == 'a' %}active{% endif %}">
+    Variant A (Claude)
+  </a>
+  <a href="/ab_map?variant=b" class="ab-btn {% if variant == 'b' %}active{% endif %}">
+    Variant B (Pro 5.5)
+  </a>
+
+  <span id="spacer"></span>
+
+  <a id="source-lens-link" href="/source-lens">Open in Source Lens &rarr;</a>
+</div>
+
+<iframe id="map-frame"
+  src="{{ '/map' if variant == 'a' else '/map/pro' }}"
+  title="{{ 'Claude cowork map' if variant == 'a' else 'Pro 5.5 map' }}">
+</iframe>
+
+<script>
+(function () {
+  try {
+    fetch('/api/telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'map_ab_variant_viewed',
+        variant: '{{ variant }}',
+        source: 'ab_map'
+      })
+    });
+  } catch (_) {}
+})();
+</script>
+
+</body>
+</html>
