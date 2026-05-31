@@ -110,6 +110,7 @@ let scene;
 let camera;
 let renderer;
 let globeGroup;
+let spinGroup;
 let markerGroup;
 let raycaster;
 let pointer;
@@ -369,10 +370,19 @@ function createGlobe(countries) {
   rim.position.set(-4, -2, -3);
   scene.add(rim);
 
+  // Nested transform: outer globeGroup carries the user-orbit + the
+  // fixed axial tilt (Earth's ~23.5° obliquity, applied around Z so
+  // the pole leans to the user's right). Inner spinGroup carries the
+  // earth, borders, markers — and is the ONLY thing rotated by the
+  // idle auto-spin, so the spin happens around the tilted pole and
+  // continents no longer precess against a vertical world-Y axis.
   globeGroup = new THREE.Group();
-  globeGroup.rotation.y = -0.54;
-  globeGroup.rotation.x = 0.12;
+  globeGroup.rotation.y = -0.54;            // initial framing yaw
+  globeGroup.rotation.z = 0.41;             // ~23.5° axial tilt
   scene.add(globeGroup);
+
+  spinGroup = new THREE.Group();
+  globeGroup.add(spinGroup);
 
   const earthRadius = 2.2;
   const earth = new THREE.Mesh(
@@ -385,7 +395,7 @@ function createGlobe(countries) {
       shininess: 26,
     }),
   );
-  globeGroup.add(earth);
+  spinGroup.add(earth);
 
   const wire = new THREE.Mesh(
     new THREE.SphereGeometry(earthRadius + 0.006, 48, 24),
@@ -396,7 +406,7 @@ function createGlobe(countries) {
       opacity: 0.075,
     }),
   );
-  globeGroup.add(wire);
+  spinGroup.add(wire);
 
   const atmosphere = new THREE.Mesh(
     new THREE.SphereGeometry(earthRadius + 0.12, 96, 64),
@@ -407,12 +417,12 @@ function createGlobe(countries) {
       side: THREE.BackSide,
     }),
   );
-  globeGroup.add(atmosphere);
+  spinGroup.add(atmosphere);
 
   markerGroup = new THREE.Group();
   markers = countries.map((country) => createMarker(country, earthRadius + 0.16));
   markers.forEach((marker) => markerGroup.add(marker));
-  globeGroup.add(markerGroup);
+  spinGroup.add(markerGroup);
 
   addCountryBorders(earthRadius + 0.012);
 
@@ -467,7 +477,10 @@ function addCountryBorders(radius) {
       });
       const borders = new THREE.LineSegments(geometry, material);
       borders.renderOrder = 1;
-      globeGroup.add(borders);
+      // Borders share the rest of the earth's rotation, so attach to
+      // spinGroup (not globeGroup) — keeps continents locked to the
+      // tilted spin axis instead of precessing around world-Y.
+      spinGroup.add(borders);
     })
     .catch((error) => {
       // eslint-disable-next-line no-console
@@ -777,7 +790,11 @@ function animate(time = 0) {
   }
 
   if (!reducedMotion && !dragging && !focusAnimating) {
-    globeGroup.rotation.y += 0.0008;
+    // Idle spin around the tilted pole. At 60fps and 2π per rotation,
+    // 0.0017 rad/frame ≈ 0.102 rad/s ≈ 61.6s per full rotation —
+    // stately, demo-friendly, hints at planetary motion. Rotates the
+    // inner spinGroup so the tilt stays fixed in world space.
+    spinGroup.rotation.y += 0.0017;
   }
 
   markers.forEach((marker) => {
