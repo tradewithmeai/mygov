@@ -115,6 +115,11 @@
   function setCaption(text) {
     caption.textContent = text;
     caption.classList.add('is-visible');
+    // Debug log so we can audit scene timing post-hoc via window.__autopilotLog.
+    try {
+      if (!window.__autopilotLog) window.__autopilotLog = [];
+      window.__autopilotLog.push({ t: Date.now(), caption: text });
+    } catch (_) {}
   }
   function hideCaption() {
     caption.classList.remove('is-visible');
