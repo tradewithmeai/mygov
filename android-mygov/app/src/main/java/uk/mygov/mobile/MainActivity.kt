@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
             loadWithOverviewMode = true
         }
 
-        WebView.setWebContentsDebuggingEnabled(false)
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
         WebView.startSafeBrowsing(this) { _ -> }
 
