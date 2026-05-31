@@ -2947,5 +2947,113 @@ text.ring-svg-text {
   text-transform: uppercase;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Hotfix — menu label alignment + pane border parity
+   ══════════════════════════════════════════════════════════════
+   1) Wedge labels were anchored at corner offsets (top/right: 25/19%)
+      which placed them off the wedge's diagonal axis and let parts of
+      the label box drift outside the wedge's clip-path / inner mask,
+      reading as "clipped" or "off the button".
+   2) Pane borders: source-pane had a 1px cyan top border + 1px slate
+      right border; map-pane had only a 1px cyan right border with no
+      top. Result: asymmetric frame around the split-screen with a
+      "double border" feel at the divider seam.
+*/
+
+/* ── Wedge labels — sit on the band midline along the wedge
+       diagonal axis. With wedge 220×220 centred at 50%, band runs
+       radius 56-110 from centre; label centre at radius ~80 along
+       the 45° diagonal of each quadrant = 56% from centre on each
+       axis. translate(-50%, -50%) re-centres the label box on that
+       point. */
+.wedge-ne .wedge-label,
+.wedge-se .wedge-label,
+.wedge-sw .wedge-label,
+.wedge-nw .wedge-label {
+  top: auto; right: auto; bottom: auto; left: auto;
+}
+.wedge-ne .wedge-label { top: 24%;    right: 24%;  transform: translate(50%, -50%); }
+.wedge-se .wedge-label { bottom: 24%; right: 24%;  transform: translate(50%, 50%); }
+.wedge-sw .wedge-label { bottom: 24%; left: 24%;   transform: translate(-50%, 50%); }
+.wedge-nw .wedge-label { top: 24%;    left: 24%;   transform: translate(-50%, -50%); }
+
+/* Lift labels above the wedge background so the inner-disc mask
+   on .service-action.ring-2 can't clip them, and raise contrast. */
+.wedge-label {
+  z-index: 2;
+  /* Slightly tighter chip to avoid neighbour-wedge crowding */
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  padding: 3px 9px;
+  color: #f0f9ff;
+  background: rgba(8, 18, 34, 0.78);
+  border-color: rgba(125, 211, 252, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 4px 10px rgba(2, 6, 23, 0.55);
+  white-space: nowrap;
+}
+/* The ring-2 wrapper masks an inner disc transparent. That mask
+   applies to the wrapper AND its descendants — labels above need
+   their own stacking context to escape it. Promote the wedge button
+   to a stacking context. */
+.ring-wedge { position: absolute; }
+.ring-wedge.active .wedge-label {
+  background: rgba(34, 211, 238, 0.32);
+  border-color: rgba(134, 239, 172, 0.55);
+}
+
+/* ── Explain ring "Explain" text — small dy nudge so glyph bowls
+   sit visually centered on the band. With dominant-baseline: central
+   set inline already, just push 1px outward (negative dy moves text
+   away from the path origin). */
+#ring-1-text { /* applied via attribute would be cleaner but inline
+                  CSS dy works in Blink + WebKit. */ }
+.ring-svg-text { dominant-baseline: central; }
+text.ring-svg-text > textPath { dominant-baseline: central; }
+
+/* ── Pane border parity ──────────────────────────────────
+   LTR (default): source pane on the LEFT, map pane on the RIGHT.
+   The visual divider is the EDGE BETWEEN them — owned by exactly
+   one pane's border. Pick source-pane's right edge as canonical
+   and remove all other competing borders. */
+
+/* Top border: identical on both panes. */
+.lens-poc > .map-pane,
+.lens-poc > .source-pane {
+  border-top: 1px solid rgba(56, 189, 248, 0.18) !important;
+}
+/* Map pane: no other borders. The earlier rule put a cyan border
+   on .map-pane right; remove it (with !important to beat the
+   earlier override). */
+.lens-poc > .map-pane {
+  border-right: 0 !important;
+  border-left: 0 !important;
+  border-bottom: 0 !important;
+}
+/* Source pane: owns the divider on its right edge in LTR, left
+   edge in RTL. Single 1px line in the same cyan as the top edge
+   so all visible pane borders match. */
+.lens-poc > .source-pane {
+  border-right: 1px solid rgba(56, 189, 248, 0.18) !important;
+  border-left: 0 !important;
+  border-bottom: 0 !important;
+}
+html[dir="rtl"] .lens-poc > .source-pane {
+  border-right: 0 !important;
+  border-left: 1px solid rgba(56, 189, 248, 0.18) !important;
+}
+/* Mobile (≤920px): single column, no left/right pane edges to align;
+   the existing mobile rules already set a bottom border between the
+   stacked panes. Keep that, just match the colour token. */
+@media (max-width: 920px) {
+  .lens-poc > .source-pane {
+    border-right: 0 !important;
+    border-left: 0 !important;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
+  }
+  html[dir="rtl"] .lens-poc > .source-pane { border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important; }
+}
+
 
 
