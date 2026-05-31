@@ -378,7 +378,13 @@ function createGlobe(countries) {
   // continents no longer precess against a vertical world-Y axis.
   globeGroup = new THREE.Group();
   globeGroup.rotation.y = -0.54;            // initial framing yaw
-  globeGroup.rotation.z = 0.41;             // ~23.5° axial tilt
+  // ~23.5° axial tilt. Negative Z rotation leans the north pole to
+  // the LEFT (west) in the image — matching Earth-style obliquity as
+  // commonly drawn with the pole offset toward the camera's left.
+  // (The composition with the existing -0.54 yaw flips the visible
+  // direction vs. a bare Z rotation, so the sign here is the one
+  // verified by eye to give west-lean.)
+  globeGroup.rotation.z = -0.41;
   scene.add(globeGroup);
 
   spinGroup = new THREE.Group();
