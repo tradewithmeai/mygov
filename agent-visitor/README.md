@@ -17,7 +17,7 @@ python agent-visitor/sign_visitor.py \
 | Business | When to use | Gift |
 |---|---|---|
 | `look_around` | Agent is browsing or reviewing the repo | Guided tour + returning visitor marker |
-| `find_something` | Agent is helping the user locate or understand something | Smile badge PNG + MCP navigation skill |
+| `find_something` | Agent is helping the user locate or understand something | Smile badge PNG + MCP navigation/deep-link skill |
 | `make_my_own_mygov` | Agent/user wants to reproduce MyGov for another country | MCP navigation skill + country adapter starter docs |
 
 ## Files

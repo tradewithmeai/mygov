@@ -59,6 +59,8 @@
             <a class="pw-link pw-mp-list-name" href="/publicwhip/mp/{{ mp.member_id }}" data-explainable="true" data-explain-type="mp" data-member-id="{{ mp.member_id }}">{{ mp.name }}</a>
             <a class="pw-contact-mp pw-contact-mp--compact"
                href="https://www.writetothem.com/"
+               data-member-id="{{ mp.member_id }}"
+               data-member-name="{{ mp.name|e }}"
                target="_blank"
                rel="noopener noreferrer"
                title="Contact this MP via WriteToThem"

@@ -124,3 +124,31 @@ class MyGovClient:
             questions_recorded=d["questions_recorded"],
             recent_votes=d.get("recent_votes", []),
         )
+
+    def search_mps(self, q: str, limit: int = 10) -> list[dict]:
+        resp = self._get("/api/agent/search_mps", q=q, limit=limit)
+        return resp.get("data", {}).get("results", [])
+
+    def get_map_payload(self, mode: str = "vote-split", division_id: int | None = None) -> dict:
+        params = {"mode": mode}
+        if division_id is not None:
+            params["division_id"] = division_id
+        resp = self._get("/api/agent/map_payload", **params)
+        return resp.get("data", {})
+
+    def list_global_countries(self, status: str | None = None, limit: int = 25) -> list[dict]:
+        params = {"limit": limit}
+        if status:
+            params["status"] = status
+        resp = self._get("/api/agent/global/countries", **params)
+        return resp.get("data", {}).get("countries", [])
+
+    def get_global_country(self, iso2: str) -> dict:
+        resp = self._get(f"/api/agent/global/country/{iso2}")
+        return resp.get("data", {}).get("country", {})
+
+    def get_deeplink(self, target: str, **kwargs) -> dict:
+        params = {"target": target}
+        params.update(kwargs)
+        resp = self._get("/api/agent/deeplink", **params)
+        return resp.get("data", {})

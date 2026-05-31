@@ -53,6 +53,8 @@
               data-context="mp-name">{{ mp.name }}</h1>
           <a class="pw-contact-mp"
              href="https://www.writetothem.com/"
+             data-member-id="{{ mp.member_id }}"
+             data-member-name="{{ mp.name|e }}"
              target="_blank"
              rel="noopener noreferrer"
              title="Contact this MP via WriteToThem"

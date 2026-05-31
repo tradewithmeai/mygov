@@ -136,6 +136,26 @@
   </section>
 </main>
 
+<div id="entry-modal" class="entry-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+  <div class="entry-modal-card">
+    <p class="eyebrow">Welcome</p>
+    <h2 id="entry-modal-title">Start with your country?</h2>
+    <p id="entry-modal-copy">We detected your location and focused the globe. If your country has a live MyGov adapter, you can enter it now or explore another country first.</p>
+    <div id="entry-modal-live-note" class="entry-modal-live-note" hidden>
+      <strong>Live adapter available:</strong> <span id="entry-modal-live-country">United Kingdom</span>
+    </div>
+    <div class="entry-modal-actions">
+      <button type="button" id="entry-open-site" class="nav-pill">Enter your site</button>
+      <button type="button" id="entry-choose-country" class="nav-pill secondary">Choose another country</button>
+    </div>
+    <div class="entry-modal-info">
+      <p><strong>Agents Party:</strong> repo welcome flow for visiting agents is now live.</p>
+      <p><strong>Contributor program:</strong> opening soon for country adapters and civic data partners.</p>
+      <p><strong>MCP + API:</strong> MyGov exposes an agent API and MCP server for structured navigation and extraction.</p>
+    </div>
+  </div>
+</div>
+
 <noscript>
   <div class="noscript-warning">This 3D globe needs JavaScript. The static feasibility data is available at <code>/static/data/global_feasibility.json</code>.</div>
 </noscript>

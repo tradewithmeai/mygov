@@ -32,6 +32,13 @@ const filterTitle = document.getElementById('filter-title');
 const filterMeta = document.getElementById('filter-meta');
 const filterList = document.getElementById('filter-list');
 const filterBack = document.getElementById('filter-back');
+const entryModal = document.getElementById('entry-modal');
+const entryModalTitle = document.getElementById('entry-modal-title');
+const entryModalCopy = document.getElementById('entry-modal-copy');
+const entryModalLiveNote = document.getElementById('entry-modal-live-note');
+const entryModalLiveCountry = document.getElementById('entry-modal-live-country');
+const entryOpenSite = document.getElementById('entry-open-site');
+const entryChooseCountry = document.getElementById('entry-choose-country');
 
 const els = {
   live: document.getElementById('stat-live'),
@@ -54,11 +61,49 @@ const els = {
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dataUrl = shell?.dataset.feasibilityUrl || '/api/global/feasibility';
 const activeLocale = shell?.dataset.locale || 'en';
+const pageParams = new URLSearchParams(window.location.search);
 
 function toLensUrl(country) {
   const cc = encodeURIComponent(((country && country.iso2) || 'GB').toUpperCase());
   const lang = encodeURIComponent(activeLocale || 'en');
   return `/source-lens?source=lens&cc=${cc}&lang=${lang}`;
+}
+
+function maybeShowEntryModal(country) {
+  if (!entryModal || !country) return;
+  if (pageParams.get('from') !== 'start') return;
+
+  const isLive = !!country.working_adapter;
+  entryModal.hidden = false;
+  entryModal.setAttribute('aria-hidden', 'false');
+  if (entryModalLiveCountry) entryModalLiveCountry.textContent = country.name || 'your country';
+
+  if (isLive) {
+    if (entryModalTitle) entryModalTitle.textContent = `Enter ${country.name || 'your'} MyGov site?`;
+    if (entryModalCopy) entryModalCopy.textContent = 'A live adapter is available for your country. Enter now or keep exploring the globe first.';
+    if (entryModalLiveNote) entryModalLiveNote.hidden = false;
+    if (entryOpenSite) {
+      entryOpenSite.hidden = false;
+      entryOpenSite.textContent = 'Enter your site';
+      entryOpenSite.onclick = () => { window.location.href = toLensUrl(country); };
+    }
+  } else {
+    if (entryModalTitle) entryModalTitle.textContent = `Explore ${country.name || 'your country'} readiness`;
+    if (entryModalCopy) entryModalCopy.textContent = 'Your country does not have a live adapter yet. Explore feasibility and pick any country on the globe.';
+    if (entryModalLiveNote) entryModalLiveNote.hidden = true;
+    if (entryOpenSite) {
+      entryOpenSite.hidden = true;
+      entryOpenSite.onclick = null;
+    }
+  }
+
+  if (entryChooseCountry) {
+    entryChooseCountry.onclick = () => {
+      entryModal.hidden = true;
+      entryModal.setAttribute('aria-hidden', 'true');
+      countrySearchInput?.focus();
+    };
+  }
 }
 
 let scene;
@@ -784,6 +829,7 @@ function start() {
       selectCountry(initial);
       if (initial) focusCountryOnGlobe(initial);
       if (countrySearchInput && initial) countrySearchInput.value = initial.name || '';
+      maybeShowEntryModal(initial);
       bindCountrySearch();
       bindLegendFilters();
       loading.hidden = true;

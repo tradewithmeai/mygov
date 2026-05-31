@@ -1,31 +1,24 @@
 # MyGov Agent MCP Server
 
-An agent control surface for MyGov. Lets an external AI agent (Claude, Codex, or any MCP client) navigate MyGov and perform core user flows programmatically.
-
-## What this proves
-
-> "MyGov is not just a website — it exposes a safe, authenticated agent control surface."
+Agent control surface for MyGov. External agents (Claude, Codex, any MCP client) can navigate core flows and fetch structured data via `/api/agent/*`.
 
 ## Quick start
 
-### 1. Set environment variables
+1. Set env vars:
 
 ```bash
-# Required — shared secret between the MCP server and the Flask app
 export MYGOV_AGENT_API_TOKEN=dev-token-123
-
-# Optional — defaults to http://127.0.0.1:5050
 export MYGOV_APP_URL=http://127.0.0.1:5050
 ```
 
-### 2. Start the MyGov app
+2. Start app:
 
 ```bash
 cd ..
 MYGOV_AGENT_API_TOKEN=dev-token-123 python app.py
 ```
 
-### 3. Run the demo (no MCP required)
+3. Run demo:
 
 ```bash
 cd agent-mcp
@@ -33,38 +26,36 @@ pip install httpx
 MYGOV_AGENT_API_TOKEN=dev-token-123 python demo_run.py
 ```
 
-### 4. Run the MCP server (optional — requires `mcp` package)
+4. Run MCP server:
 
 ```bash
 pip install mcp httpx
 MYGOV_AGENT_API_TOKEN=dev-token-123 python server.py
 ```
 
-If `mcp` install fails, the demo and API still work — MCP is the wrapper, not the core.
-
----
-
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `health_check()` | Verify app reachability, DB access, and auth |
-| `get_routes()` | List canonical routes in the MyGov app |
-| `list_divisions(limit)` | Recent parliamentary divisions from the database |
-| `select_division(division_id)` | Full division metadata and sample voter breakdown |
-| `explain_item(division_id, member_id, level, context)` | Plain-English explanation of an MP's vote |
-| `get_mp_profile_summary(member_id)` | MP profile — votes, questions, recent activity |
+| `health_check()` | Verify app reachability, DB access, auth |
+| `get_routes()` | List canonical app and agent API routes |
+| `list_divisions(limit)` | Recent parliamentary divisions |
+| `select_division(division_id)` | Division metadata and sample voter breakdown |
+| `explain_item(division_id, member_id, level, context)` | Plain-English vote explanation |
+| `get_mp_profile_summary(member_id)` | MP profile summary |
+| `search_mps(query, limit)` | Search MPs by name, party, constituency |
+| `get_map_payload(mode, division_id)` | Map-ready payload for `vote-split`, `party-split`, `gender-split`, `rebel-rate` |
+| `list_global_countries(status, limit)` | Global feasibility country list |
+| `get_global_country(iso2)` | One country feasibility record |
+| `get_deeplink(target, ...)` | Canonical in-app deep link generation |
 
-### Explain levels
+## Deep link targets
 
-| Level | Name | Length |
-|-------|------|--------|
-| `"skim"` / `0` | SKIM | 1 sentence |
-| `"practical"` / `1` | PRACTICAL | 2–3 sentences |
-| `"detailed"` / `2` | DETAILED | 4–6 sentences |
-| `"full"` / `3` | FULL | Structured 4-section response |
-
----
+- `source-lens` (optional: `cc`, `lang`, `source`)
+- `global` (optional: `cc`, `lang`)
+- `mp` (required: `member_id`)
+- `ab-map` (optional: `variant` = `a` or `b`)
+- `publicwhip-division` (required: `division_id`)
 
 ## Agent API contract
 
@@ -73,34 +64,19 @@ All `/api/agent/*` responses:
 ```json
 {
   "ok": true,
-  "data": { ... },
+  "data": {},
   "error": null,
-  "ts": "2026-05-30T10:00:00+00:00"
+  "ts": "2026-05-31T10:00:00+00:00"
 }
 ```
 
-- Auth: `Authorization: Bearer <token>` header required on every request.
-- No token → `401`.
-- Wrong token → `401`.
-- Missing `MYGOV_AGENT_API_TOKEN` on the server → `503`.
-- Rate limit (60 req/min) → `429`.
-
----
-
-## Demo flow
-
-`demo_run.py` performs this sequence and prints a structured JSON summary:
-
-1. `health_check` — confirm app alive
-2. `list_divisions(limit=5)` — see recent votes
-3. `select_division(id)` — inspect first result
-4. `explain_item(division_id, member_id, level="practical")` — get plain-English summary
-
----
+- Auth: `Authorization: Bearer <token>`
+- Missing/wrong token: `401`
+- Token not configured on server: `503`
+- Rate limit: `429` (60 req/min, in-memory)
 
 ## Known limits
 
-- Explanation endpoint calls OpenAI (gpt-4o-mini by default). Falls back to a plain-text summary if `OPENAI_API_KEY` is not set — the API still returns 200.
-- `sample_voters` in `select_division` is capped at 20. Full map data is available via `/api/lens/division/<id>`.
-- Rate limit is in-memory; resets on server restart.
-- MCP package (`pip install mcp`) requires Python 3.10+. If unavailable, `mygov_client.py` and `demo_run.py` work standalone.
+- Explanation endpoint uses OpenAI when configured; otherwise deterministic fallback text.
+- `sample_voters` is capped.
+- Rate limiter is process-local and resets on restart.

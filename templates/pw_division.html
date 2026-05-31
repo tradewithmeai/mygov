@@ -101,6 +101,8 @@
             <a class="pw-link" href="/publicwhip/mp/{{ v.member_id }}">{{ v.name }}</a>
             <a class="pw-contact-mp pw-contact-mp--compact"
                href="https://www.writetothem.com/"
+               data-member-id="{{ v.member_id }}"
+               data-member-name="{{ v.name|e }}"
                target="_blank"
                rel="noopener noreferrer"
                title="Contact this MP via WriteToThem"
@@ -122,6 +124,8 @@
             <a class="pw-link" href="/publicwhip/mp/{{ v.member_id }}">{{ v.name }}</a>
             <a class="pw-contact-mp pw-contact-mp--compact"
                href="https://www.writetothem.com/"
+               data-member-id="{{ v.member_id }}"
+               data-member-name="{{ v.name|e }}"
                target="_blank"
                rel="noopener noreferrer"
                title="Contact this MP via WriteToThem"

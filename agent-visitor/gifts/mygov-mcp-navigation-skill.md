@@ -17,6 +17,18 @@ Purpose: let an agent operate MyGov through the agent API/MCP layer instead of g
 - `select_division`
 - `explain_item`
 - `get_mp_profile_summary`
+- `search_mps`
+- `get_map_payload`
+- `list_global_countries`
+- `get_global_country`
+- `get_deeplink`
+
+## Deep-link patterns
+
+- `get_deeplink(target="source-lens", cc="GB", lang="en")`
+- `get_deeplink(target="mp", member_id=206)`
+- `get_deeplink(target="global", cc="IN", lang="hi")`
+- `get_deeplink(target="ab-map", variant="b")`
 
 ## Rule
 

@@ -1327,8 +1327,8 @@ body.source-lens-active .url-lens {
 */
 .service-menu {
   position: absolute;
-  right: 36px;          /* anchor X = M-center distance from right edge */
-  bottom: 36px;         /* anchor Y = M-center distance from bottom edge */
+  right: 28px;          /* nudged slightly right */
+  bottom: 28px;         /* nudged slightly down */
   width: 0;
   height: 0;
   z-index: 7;
@@ -1765,8 +1765,8 @@ body.source-lens-active .url-lens {
 /* Map title overlay (top-left of the map) */
 .map-title {
   position: absolute;
-  top: 14px;
-  left: 16px;
+  top: 18px;
+  left: 20px;
   z-index: 6;
   margin: 0;
   padding: 6px 12px;
@@ -2834,6 +2834,12 @@ text.ring-svg-text {
   padding: 10px 12px;
   color: #e5e7eb;
   pointer-events: auto;
+}
+
+/* Remove deprecated map-top controls from the visual pane. */
+.global-cross-toggle,
+.global-cross-overlay {
+  display: none !important;
 }
 .global-cross-card h3 {
   margin: 0 0 6px;

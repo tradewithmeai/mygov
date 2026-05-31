@@ -225,6 +225,8 @@
         <h1>{{ member['name'] }}</h1>
         <a class="contact-mp-link"
            href="https://www.writetothem.com/"
+           data-member-id="{{ member['member_id'] }}"
+           data-member-name="{{ member['name']|e }}"
            target="_blank"
            rel="noopener noreferrer"
            title="Contact this MP via WriteToThem"

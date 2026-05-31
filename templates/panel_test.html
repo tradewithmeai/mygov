@@ -33,16 +33,6 @@
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       ></iframe>
 
-      <button type="button" id="global-cross-toggle" class="global-cross-toggle" title="Toggle global feasibility crosses" aria-label="Toggle global feasibility crosses">🌐</button>
-      <div id="global-cross-overlay" class="global-cross-overlay" hidden>
-        <div id="global-cross-layer" class="global-cross-layer" aria-hidden="true"></div>
-        <article id="global-cross-card" class="global-cross-card" hidden>
-          <h3 id="gcc-name">Country</h3>
-          <p id="gcc-status"></p>
-          <p id="gcc-summary"></p>
-          <p id="gcc-next"></p>
-        </article>
-      </div>
 
       <!-- Concentric menu: rings 1 (Explain) + 2 (wedges) always visible.
            Centre is the S search trigger (replaces the old M button). -->
@@ -117,27 +107,6 @@
           </svg>
         </div>
 
-        <!-- Search core: S button + horizontally-expanding input replace
-             the old M centre. Same /api/mps/search wiring as before. -->
-        <div id="map-search" class="map-search is-collapsed" role="search" aria-label="Search MP or constituency">
-          <button type="button" class="map-search-trigger service-menu-center" id="map-search-trigger" title="Search" aria-label="Search MP" aria-expanded="false">
-            <span class="map-search-glyph" aria-hidden="true">S</span>
-          </button>
-          <form id="mp-search-form" class="map-search-form" autocomplete="on">
-            <input
-              id="mp-search-input"
-              class="map-search-input"
-              type="search"
-              name="q"
-              placeholder=""
-              autocomplete="on"
-              spellcheck="false"
-              aria-label="Search MP or constituency"
-              maxlength="48"
-            >
-          </form>
-          <div id="search-results" class="search-results" hidden></div>
-        </div>
       </div>
 
       <!-- Map title overlay -->

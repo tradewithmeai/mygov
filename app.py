@@ -406,6 +406,29 @@ def postcode_lookup():
         return jsonify(error=str(e)), 500
 
 
+@app.route("/api/postcode/autocomplete")
+def postcode_autocomplete():
+    raw = request.args.get("q", "").strip().upper()
+    query = re.sub(r"\s+", "", raw)
+    if len(query) < 3:
+        return jsonify(results=[])
+    if not re.fullmatch(r"[A-Z0-9]+", query):
+        return jsonify(results=[])
+    try:
+        r = httpx.get(
+            f"https://api.postcodes.io/postcodes/{query}/autocomplete",
+            timeout=4.0,
+        )
+        if r.status_code != 200:
+            return jsonify(results=[])
+        data = r.json() or {}
+        results = data.get("result") or []
+        # Keep shortlist small for a fast dropdown.
+        return jsonify(results=results[:8])
+    except Exception:
+        return jsonify(results=[])
+
+
 @app.route("/api/explain-vote")
 def explain_vote():
     division_id = request.args.get("division_id", type=int)
@@ -987,9 +1010,8 @@ def start_router():
     """
     cc = resolve_country_code(request)
     locale = resolve_locale(request)
-    source = "lens" if is_live_country(cc) else "global"
-    qs = f"from=start&cc={cc}&lang={locale}&source={source}"
-    return redirect(f"/source-lens?{qs}", code=302)
+    qs = f"from=start&cc={cc}&lang={locale}"
+    return redirect(f"/global?{qs}", code=302)
 
 
 @app.route("/global")
@@ -1874,6 +1896,11 @@ def agent_routes():
             {"path": "/source-lens", "description": "Interactive vote map and division browser (canonical UK view)"},
             {"path": "/global", "description": "Global civic feasibility map — country-adapter readiness"},
             {"path": "/mp/<id>", "description": "MP profile — votes, questions, issue spotlight"},
+            {"path": "/api/agent/search_mps?q=<text>", "description": "Search MPs by name/party/constituency"},
+            {"path": "/api/agent/map_payload?mode=<vote-split|party-split|gender-split|rebel-rate>[&division_id=<id>]", "description": "Get map-ready payload for a map mode"},
+            {"path": "/api/agent/global/countries[?status=green|orange|red&limit=<n>]", "description": "List countries from global feasibility dataset"},
+            {"path": "/api/agent/global/country/<iso2>", "description": "Get one country feasibility record by ISO2"},
+            {"path": "/api/agent/deeplink?target=<source-lens|global|mp|ab-map|publicwhip-division>", "description": "Build canonical in-app deep links for agent navigation"},
         ]
     })
 
@@ -2088,6 +2115,180 @@ def agent_mp(member_id):
             for v in recent_votes
         ],
     })
+
+
+@app.route("/api/agent/search_mps")
+@require_agent_token
+def agent_search_mps():
+    q = (request.args.get("q") or "").strip()
+    if len(q) < 2:
+        return _agent_response(error="q must be at least 2 characters", status=400)
+
+    limit = min(max(int(request.args.get("limit", 10)), 1), 50)
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT member_id, name, party, constituency
+        FROM members
+        WHERE name LIKE ? OR party LIKE ? OR constituency LIKE ?
+        ORDER BY name
+        LIMIT ?
+        """,
+        (f"%{q}%", f"%{q}%", f"%{q}%", limit),
+    ).fetchall()
+    conn.close()
+    return _agent_response(data={
+        "query": q,
+        "results": [
+            {
+                "member_id": r["member_id"],
+                "name": r["name"],
+                "party": r["party"],
+                "constituency": r["constituency"],
+                "profile_url": f"/mp/{r['member_id']}",
+            }
+            for r in rows
+        ],
+    })
+
+
+@app.route("/api/agent/map_payload")
+@require_agent_token
+def agent_map_payload():
+    mode = (request.args.get("mode") or "vote-split").strip().lower()
+    division_id = request.args.get("division_id", type=int)
+
+    if mode not in {"vote-split", "party-split", "gender-split", "rebel-rate"}:
+        return _agent_response(error="Unsupported mode", status=400)
+
+    if mode == "party-split":
+        raw = api_lens_map_party().get_json()
+        return _agent_response(data={"mode": mode, "map_data": raw.get("map_data", {})})
+    if mode == "gender-split":
+        raw = api_lens_map_gender().get_json()
+        return _agent_response(data={"mode": mode, "map_data": raw.get("map_data", {})})
+    if mode == "rebel-rate":
+        raw = api_lens_map_rebel_rate().get_json()
+        return _agent_response(data={"mode": mode, "map_data": raw.get("map_data", {})})
+
+    # vote-split
+    if not division_id:
+        conn = get_publicwhip_conn()
+        latest = conn.execute(
+            """
+            SELECT DISTINCT division_id
+            FROM votes
+            WHERE title IS NOT NULL AND aye_count > 0
+            ORDER BY division_date DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        conn.close()
+        if not latest:
+            return _agent_response(error="No divisions available", status=404)
+        division_id = int(latest["division_id"])
+
+    payload = api_lens_division(division_id).get_json()
+    if not payload.get("ok"):
+        return _agent_response(error=payload.get("error", "Division payload failed"), status=404)
+    return _agent_response(data={
+        "mode": mode,
+        "division_id": division_id,
+        "title": payload.get("title"),
+        "date": payload.get("date"),
+        "map_data": payload.get("map_data", {}),
+        "aye_count": payload.get("aye_count"),
+        "no_count": payload.get("no_count"),
+    })
+
+
+@app.route("/api/agent/global/countries")
+@require_agent_token
+def agent_global_countries():
+    data = _load_global_feasibility()
+    countries = data.get("countries", [])
+    status_filter = (request.args.get("status") or "").strip().lower()
+    if status_filter in {"green", "orange", "red"}:
+        countries = [c for c in countries if (c.get("status") or "").lower() == status_filter]
+    limit = min(max(int(request.args.get("limit", 25)), 1), 200)
+    slim = [
+        {
+            "name": c.get("name"),
+            "iso2": c.get("iso2"),
+            "status": c.get("status"),
+            "status_label": c.get("status_label"),
+            "summary": c.get("summary"),
+            "working_adapter": bool(c.get("working_adapter")),
+        }
+        for c in countries[:limit]
+    ]
+    return _agent_response(data={"countries": slim, "count": len(slim)})
+
+
+@app.route("/api/agent/global/country/<iso2>")
+@require_agent_token
+def agent_global_country(iso2):
+    cc = (iso2 or "").strip().upper()
+    data = _load_global_feasibility()
+    for c in data.get("countries", []):
+        if (c.get("iso2") or "").upper() == cc:
+            return _agent_response(data={"country": c})
+    return _agent_response(error="Country not found", status=404)
+
+
+@app.route("/api/agent/deeplink")
+@require_agent_token
+def agent_deeplink():
+    target = (request.args.get("target") or "").strip().lower()
+
+    if target == "source-lens":
+        cc = (request.args.get("cc") or "").strip().upper() or "GB"
+        lang = (request.args.get("lang") or "").strip().lower() or "en"
+        source = (request.args.get("source") or "lens").strip().lower()
+        return _agent_response(data={
+            "target": "source-lens",
+            "path": f"/source-lens?source={source}&cc={cc}&lang={lang}",
+        })
+
+    if target == "global":
+        cc = (request.args.get("cc") or "").strip().upper() or "GB"
+        lang = (request.args.get("lang") or "").strip().lower() or "en"
+        return _agent_response(data={
+            "target": "global",
+            "path": f"/global?cc={cc}&lang={lang}",
+        })
+
+    if target == "mp":
+        member_id = request.args.get("member_id", type=int)
+        if not member_id:
+            return _agent_response(error="member_id is required for target=mp", status=400)
+        return _agent_response(data={
+            "target": "mp",
+            "path": f"/mp/{member_id}",
+        })
+
+    if target == "ab-map":
+        variant = (request.args.get("variant") or "a").strip().lower()
+        if variant not in {"a", "b"}:
+            variant = "a"
+        return _agent_response(data={
+            "target": "ab-map",
+            "path": f"/ab_map?variant={variant}",
+        })
+
+    if target == "publicwhip-division":
+        division_id = request.args.get("division_id", type=int)
+        if not division_id:
+            return _agent_response(error="division_id is required for target=publicwhip-division", status=400)
+        return _agent_response(data={
+            "target": "publicwhip-division",
+            "path": f"/publicwhip/division/{division_id}",
+        })
+
+    return _agent_response(
+        error="Unsupported target. Use one of: source-lens, global, mp, ab-map, publicwhip-division",
+        status=400,
+    )
 
 
 if __name__ == "__main__":

@@ -144,5 +144,94 @@ def get_mp_profile_summary(member_id: int) -> dict:
         return {"error": str(e)}
 
 
+@mcp.tool()
+def search_mps(query: str, limit: int = 10) -> list:
+    """Search MPs by name, party, or constituency.
+
+    Args:
+        query: Search text (min length 2).
+        limit: Max rows (default 10, max 50).
+    """
+    try:
+        return _client.search_mps(query, limit=limit)
+    except MyGovClientError as e:
+        return [{"error": str(e)}]
+
+
+@mcp.tool()
+def get_map_payload(mode: str = "vote-split", division_id: int | None = None) -> dict:
+    """Get map-ready payload for a lens mode.
+
+    Args:
+        mode: One of vote-split, party-split, gender-split, rebel-rate.
+        division_id: Optional division id for vote-split mode.
+    """
+    try:
+        return _client.get_map_payload(mode=mode, division_id=division_id)
+    except MyGovClientError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def list_global_countries(status: str = "", limit: int = 25) -> list:
+    """List countries from global feasibility data.
+
+    Args:
+        status: Optional filter: green/orange/red.
+        limit: Max rows to return.
+    """
+    try:
+        return _client.list_global_countries(status=status or None, limit=limit)
+    except MyGovClientError as e:
+        return [{"error": str(e)}]
+
+
+@mcp.tool()
+def get_global_country(iso2: str) -> dict:
+    """Get one country record from global feasibility data by ISO2 code."""
+    try:
+        return _client.get_global_country(iso2)
+    except MyGovClientError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
+def get_deeplink(
+    target: str,
+    member_id: int | None = None,
+    division_id: int | None = None,
+    cc: str | None = None,
+    lang: str | None = None,
+    source: str | None = None,
+    variant: str | None = None,
+) -> dict:
+    """Build canonical MyGov deep links for agent navigation.
+
+    target values:
+      - source-lens (optional: cc, lang, source)
+      - global (optional: cc, lang)
+      - mp (required: member_id)
+      - ab-map (optional: variant a|b)
+      - publicwhip-division (required: division_id)
+    """
+    try:
+        kwargs: dict = {}
+        if member_id is not None:
+            kwargs["member_id"] = member_id
+        if division_id is not None:
+            kwargs["division_id"] = division_id
+        if cc:
+            kwargs["cc"] = cc
+        if lang:
+            kwargs["lang"] = lang
+        if source:
+            kwargs["source"] = source
+        if variant:
+            kwargs["variant"] = variant
+        return _client.get_deeplink(target=target, **kwargs)
+    except MyGovClientError as e:
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
     mcp.run()
