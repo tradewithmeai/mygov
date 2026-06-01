@@ -298,22 +298,24 @@ def index():
     search_results = []
 
     if query:
+        postcode_match = _lookup_postcode_mp(query)
+        if postcode_match and postcode_match.get("mp"):
+            return redirect(url_for("mp_profile", member_id=postcode_match["mp"]["id"]))
+
         if query.isdigit():
             return redirect(url_for("mp_profile", member_id=int(query)))
 
         conn = get_conn()
         rows = conn.execute(
-            """SELECT member_id, name, party, constituency FROM members
-               WHERE lower(name) LIKE lower(?) OR lower(constituency) LIKE lower(?)
-               ORDER BY name LIMIT 10""",
-            (f"%{query}%", f"%{query}%"),
+            "SELECT member_id, name, party, constituency FROM members"
         ).fetchall()
         conn.close()
 
-        if len(rows) == 1:
-            return redirect(url_for("mp_profile", member_id=rows[0]["member_id"]))
-        elif rows:
-            search_results = [dict(r) for r in rows]
+        ranked = _rank_member_rows(rows, query, limit=10)
+        if len(ranked) == 1:
+            return redirect(url_for("mp_profile", member_id=ranked[0]["member_id"]))
+        elif ranked:
+            search_results = ranked
         else:
             error = f'No MP found for "{query}". Try a full surname, constituency name, or postcode.'
 
@@ -327,19 +329,16 @@ def mp_search_api():
     if len(q) < 2:
         return jsonify(results=[])
 
-    results = []
-    seen_ids = set()
-
     conn = get_conn()
     rows = conn.execute(
-        """SELECT member_id, name, party, constituency FROM members
-           WHERE lower(name) LIKE lower(?) OR lower(constituency) LIKE lower(?)
-           ORDER BY name LIMIT 5""",
-        (f"%{q}%", f"%{q}%"),
+        "SELECT member_id, name, party, constituency FROM members"
     ).fetchall()
     conn.close()
 
-    for row in rows:
+    ranked = _rank_member_rows(rows, q, limit=8)
+    results = []
+    seen_ids = set()
+    for row in ranked:
         mid = row["member_id"]
         seen_ids.add(mid)
         results.append({
@@ -351,7 +350,19 @@ def mp_search_api():
 
     if len(results) < 8:
         api_hits = search_members(q)
+        api_scored = []
         for m in api_hits:
+            mid = m.get("id")
+            if not mid or mid in seen_ids:
+                continue
+            name = m.get("nameDisplayAs", "")
+            constituency = (m.get("latestHouseMembership") or {}).get("membershipFrom", "")
+            score = max(_search_score(q, name), _search_score(q, constituency))
+            if score <= 0:
+                continue
+            api_scored.append((score, (name or "").lower(), m, constituency))
+        api_scored.sort(key=lambda item: (-item[0], item[1]))
+        for _, _, m, constituency in api_scored:
             mid = m.get("id")
             if not mid or mid in seen_ids:
                 continue
@@ -360,7 +371,7 @@ def mp_search_api():
                 "id": mid,
                 "name": m.get("nameDisplayAs", ""),
                 "party": (m.get("latestParty") or {}).get("name", ""),
-                "constituency": (m.get("latestHouseMembership") or {}).get("membershipFrom", ""),
+                "constituency": constituency,
             })
             if len(results) >= 8:
                 break
@@ -370,46 +381,13 @@ def mp_search_api():
 
 @app.route("/api/postcode")
 def postcode_lookup():
-    pc = request.args.get("q", "").strip().replace(" ", "").upper()
+    pc = request.args.get("q", "").strip()
     if not pc:
         return jsonify(error="No postcode provided"), 400
-    try:
-        r = httpx.get(f"https://api.postcodes.io/postcodes/{pc}", timeout=5.0)
-        if r.status_code != 200:
-            return jsonify(error="Postcode not found"), 404
-        data = r.json()
-        constituency = (data.get("result") or {}).get("parliamentary_constituency", "")
-        if not constituency:
-            return jsonify(error="No constituency data for this postcode"), 404
-
-        conn = get_conn()
-        row = conn.execute(
-            "SELECT member_id, name, party, constituency FROM members WHERE lower(constituency) LIKE lower(?)",
-            (f"%{constituency}%",),
-        ).fetchone()
-        conn.close()
-
-        if row:
-            return jsonify(
-                constituency=constituency,
-                mp={"id": row["member_id"], "name": row["name"], "party": row["party"] or ""},
-            )
-        # Not in local DB — search Parliament API for this constituency
-        from parliament_client import search_members
-        hits = search_members(constituency)
-        if hits:
-            m = hits[0]
-            return jsonify(
-                constituency=constituency,
-                mp={
-                    "id": m.get("id"),
-                    "name": m.get("nameDisplayAs", ""),
-                    "party": (m.get("latestParty") or {}).get("name", ""),
-                },
-            )
-        return jsonify(constituency=constituency, mp=None)
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    match = _lookup_postcode_mp(pc)
+    if not match:
+        return jsonify(error="Postcode not found"), 404
+    return jsonify(constituency=match["constituency"], mp=match["mp"])
 
 
 @app.route("/api/postcode/autocomplete")
@@ -872,6 +850,95 @@ def _autopilot_requested(req) -> bool:
     return (req.args.get("autopilot") or "").strip() == "1"
 
 
+_SEARCH_SANITIZE_RE = re.compile(r"[^a-z0-9]+")
+_POSTCODE_RE = re.compile(r"^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$", re.I)
+
+
+def _normalize_search_text(value: str) -> str:
+    return re.sub(r"\s+", " ", _SEARCH_SANITIZE_RE.sub(" ", (value or "").lower())).strip()
+
+
+def _search_score(query: str, candidate: str) -> int:
+    q = _normalize_search_text(query)
+    c = _normalize_search_text(candidate)
+    if not q or not c:
+        return 0
+    if q == c:
+        return 300
+
+    q_words = q.split()
+    c_words = c.split()
+
+    if len(q_words) == 1:
+        if c.startswith(q):
+            return 250
+        for idx, word in enumerate(c_words):
+            if word.startswith(q):
+                return 200 - (idx * 5)
+        return 0
+
+    for start in range(max(0, len(c_words) - len(q_words) + 1)):
+        if all(c_words[start + i].startswith(q_words[i]) for i in range(len(q_words))):
+            return 220 - (start * 5)
+    return 0
+
+
+def _rank_member_rows(rows, query: str, limit: int = 10):
+    scored = []
+    for row in rows:
+        score = max(
+            _search_score(query, row["name"]),
+            _search_score(query, row["constituency"]),
+        )
+        if score <= 0:
+            continue
+        scored.append((score, (row["name"] or "").lower(), row))
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return [dict(row) for _, _, row in scored[:limit]]
+
+
+def _lookup_postcode_mp(query: str):
+    pc = (query or "").strip().replace(" ", "").upper()
+    if not pc or not _POSTCODE_RE.fullmatch(pc):
+        return None
+    try:
+        r = httpx.get(f"https://api.postcodes.io/postcodes/{pc}", timeout=5.0)
+        if r.status_code != 200:
+            return None
+        data = r.json() or {}
+        constituency = (data.get("result") or {}).get("parliamentary_constituency", "")
+        if not constituency:
+            return None
+
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT member_id, name, party, constituency FROM members WHERE lower(constituency) LIKE lower(?)",
+            (f"%{constituency}%",),
+        ).fetchone()
+        conn.close()
+        if row:
+            return {
+                "constituency": constituency,
+                "mp": {"id": row["member_id"], "name": row["name"], "party": row["party"] or ""},
+            }
+
+        from parliament_client import search_members
+        hits = search_members(constituency)
+        if hits:
+            m = hits[0]
+            return {
+                "constituency": constituency,
+                "mp": {
+                    "id": m.get("id"),
+                    "name": m.get("nameDisplayAs", ""),
+                    "party": (m.get("latestParty") or {}).get("name", ""),
+                },
+            }
+    except Exception:
+        return None
+    return None
+
+
 def resolve_dir(req) -> str:
     """Return 'rtl' if the request's locale (or ?lang= override) is
     right-to-left, else 'ltr'. Note we check both the supported-locale
@@ -1183,7 +1250,9 @@ def pw_mp(member_id):
         pass
 
     rebellion_count = len(rebellions)
-    votes_taken = len(votes)
+    conn = get_conn()
+    votes_taken = conn.execute("SELECT COUNT(*) FROM votes WHERE member_id=?", (member_id,)).fetchone()[0]
+    conn.close()
     aye_count = sum(1 for v in votes if v["voted_aye"] == 1)
     no_count = sum(1 for v in votes if v["voted_aye"] == 0)
 

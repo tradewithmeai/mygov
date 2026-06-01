@@ -391,157 +391,66 @@
 <script>
 (function () {
   const input = document.getElementById('search-input');
-  const dropdown = document.getElementById('dropdown');
   const form = document.getElementById('search-form');
 
   let timer = null;
-  let activeIndex = -1;
-  let currentResults = [];
-  let dropdownMode = 'mp'; // 'mp' | 'postcode'
+  let currentSuggestion = '';
 
-  const POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
-  const POSTCODE_PARTIAL_RE = /^[A-Z0-9 ]{3,8}$/i;
-
-  function partyColour(party) {
-    const map = {
-      'Labour': '#e4003b',
-      'Liberal Democrat': '#faa61a',
-      'Conservative': '#0087dc',
-      'Scottish National Party': '#fff95d',
-      'Green Party': '#02a95b',
-    };
-    return map[party] || '#475569';
-  }
-
-  function renderResults(results) {
-    dropdownMode = 'mp';
-    currentResults = results;
-    activeIndex = -1;
-    if (!results.length) {
-      dropdown.innerHTML = '<div class="dropdown-empty">No MPs found. Try a different name or constituency.</div>';
-    } else {
-      dropdown.innerHTML = results.map((r, i) =>
-        `<a class="dropdown-item" href="/mp/${r.id}" data-index="${i}">
-          <span style="width:10px;height:10px;border-radius:50%;background:${partyColour(r.party)};flex-shrink:0;display:inline-block"></span>
-          <div style="flex:1;min-width:0">
-            <div class="dropdown-name">${r.name}</div>
-            <div class="dropdown-meta">${r.party || ''}${r.party && r.constituency ? ' · ' : ''}${r.constituency || ''}</div>
-          </div>
-        </a>`
-      ).join('');
-    }
-    dropdown.classList.add('open');
-  }
-
-  function renderPostcodeSuggestions(postcodes) {
-    dropdownMode = 'postcode';
-    currentResults = postcodes;
-    activeIndex = -1;
-    if (!postcodes.length) {
-      dropdown.classList.remove('open');
-      return;
-    }
-    dropdown.innerHTML = postcodes.map((pc, i) =>
-      `<a class="dropdown-item" href="#" data-index="${i}" data-postcode="${pc}">
-        <span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;flex-shrink:0;display:inline-block"></span>
-        <div style="flex:1;min-width:0">
-          <div class="dropdown-name">${pc}</div>
-          <div class="dropdown-meta">Postcode suggestion</div>
-        </div>
-      </a>`
-    ).join('');
-    dropdown.classList.add('open');
+  function normalize(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   async function doSearch(q) {
-    dropdown.innerHTML = '<div class="dropdown-loading">Searching…</div>';
-    dropdown.classList.add('open');
-
-    const compact = q.replace(/\s+/g, '').toUpperCase();
-    if (!POSTCODE_RE.test(q.trim()) && POSTCODE_PARTIAL_RE.test(compact) && compact.length >= 3) {
-      try {
-        const pRes = await fetch(`/api/postcode/autocomplete?q=${encodeURIComponent(compact)}`);
-        const pData = await pRes.json();
-        if (Array.isArray(pData.results) && pData.results.length) {
-          renderPostcodeSuggestions(pData.results);
-          return;
-        }
-      } catch (_) {}
-    }
-
-    if (POSTCODE_RE.test(q.trim())) {
-      try {
-        const res = await fetch(`/api/postcode?q=${encodeURIComponent(q.trim())}`);
-        const data = await res.json();
-        if (data.mp) {
-          renderResults([{ id: data.mp.id, name: data.mp.name, party: data.mp.party, constituency: data.constituency }]);
-          return;
-        }
-      } catch (_) {}
-    }
-
     try {
       const res = await fetch(`/api/mps/search?q=${encodeURIComponent(q)}`);
       const data = await res.json();
-      renderResults(data.results || []);
+      const results = Array.isArray(data.results) ? data.results : [];
+      const typed = q.trim();
+      if (!results.length) {
+        currentSuggestion = '';
+        return;
+      }
+
+      const best = results[0];
+      const bestName = best && best.name ? String(best.name) : '';
+      const typedNorm = normalize(typed);
+      const bestNorm = normalize(bestName);
+      currentSuggestion = bestName;
+
+      if (typedNorm && bestNorm && bestNorm.startsWith(typedNorm) && input.value !== bestName) {
+        input.value = bestName;
+        window.requestAnimationFrame(function () {
+          try { input.setSelectionRange(typed.length, bestName.length); } catch (_) {}
+        });
+      }
     } catch (_) {
-      dropdown.innerHTML = '<div class="dropdown-empty">Search unavailable. Try submitting the form.</div>';
+      currentSuggestion = '';
     }
   }
 
   input.addEventListener('input', () => {
     clearTimeout(timer);
+    currentSuggestion = '';
     const q = input.value.trim();
-    if (q.length < 2) {
-      dropdown.classList.remove('open');
-      return;
-    }
-    timer = setTimeout(() => doSearch(q), 200);
+    if (q.length < 2) return;
+    timer = setTimeout(() => doSearch(q), 180);
   });
 
   input.addEventListener('keydown', (e) => {
-    const items = dropdown.querySelectorAll('.dropdown-item');
-    if (!items.length) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      activeIndex = Math.min(activeIndex + 1, items.length - 1);
-      items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      activeIndex = Math.max(activeIndex - 1, 0);
-      items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      items[activeIndex].click();
-    } else if (e.key === 'Escape') {
-      dropdown.classList.remove('open');
+    if (e.key === 'Escape') {
+      currentSuggestion = '';
     }
   });
 
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open');
-  });
-
-  dropdown.addEventListener('click', (e) => {
-    const item = e.target.closest('.dropdown-item');
-    if (!item) return;
-    if (dropdownMode === 'postcode') {
-      e.preventDefault();
-      const pc = item.getAttribute('data-postcode');
-      if (!pc) return;
-      input.value = pc;
-      doSearch(pc);
-    }
-  });
-
-  form.addEventListener('submit', (e) => {
-    if (activeIndex >= 0) {
-      e.preventDefault();
-      const items = dropdown.querySelectorAll('.dropdown-item');
-      if (items[activeIndex]) items[activeIndex].click();
-    }
+  form.addEventListener('submit', () => {
+    currentSuggestion = '';
   });
 })();
 </script>
 </body>
 </html>
+

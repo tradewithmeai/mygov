@@ -117,6 +117,9 @@
           {% endfor %}
         </tbody>
       </table>
+      {% if votes_taken > votes|length %}
+      <p class="pw-muted" style="margin-top:10px;">Showing the latest {{ votes|length }} of {{ votes_taken }} recorded votes.</p>
+      {% endif %}
     </section>
   </main>
 
