@@ -87,9 +87,29 @@
     window.addEventListener('mygov:constituency:sel', relaySelection);
 
     window.addEventListener('message', function (e) {
-      if (e.origin !== window.location.origin || !e.data || e.data.type !== 'mygov:map:setMode') return;
-      var api = window.mygovConstituencyMap;
-      if (api && typeof api.setConstituencyColours === 'function') {
+      if (e.origin !== window.location.origin || !e.data) return;
+      var type = e.data.type;
+      if (type === 'mygov:map:ping') {
+        // Parent is probing. If our API is up, re-emit :ready and flush
+        // any buffered setMode. If not, the existing poll will emit
+        // :ready once the API mounts.
+        var api = window.mygovConstituencyMap;
+        if (api && typeof api.setConstituencyColours === 'function') {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'mygov:map:ready' }, window.location.origin);
+          }
+          _readySent = true;
+          if (_pendingSetMode) {
+            var pending = _pendingSetMode;
+            _pendingSetMode = null;
+            _applySetMode(pending);
+          }
+        }
+        return;
+      }
+      if (type !== 'mygov:map:setMode') return;
+      var api2 = window.mygovConstituencyMap;
+      if (api2 && typeof api2.setConstituencyColours === 'function') {
         _applySetMode(e.data);
       } else {
         _pendingSetMode = e.data;

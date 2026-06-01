@@ -393,11 +393,11 @@
   function sendMapColours(payload) {
     currentMapData = payload.map_data || {};
     if (!mapFrame.contentWindow) return;
-    if (!mapReady) {
-      pendingVisPayload = payload;
-      setStatus('Map loading… visualisation queued.', 'warn');
-      return;
-    }
+    // Don't gate on mapReady. The iframe (map_relay.html) buffers an
+    // early setMode in _pendingSetMode and applies it the moment its
+    // React API mounts, so dispatch unconditionally. The previous gate
+    // deadlocked on Vercel cold-start when the iframe posted :ready
+    // before the parent's message listener attached.
     pendingVisPayload = null;
     _dispatchMapColours(payload);
   }
@@ -769,10 +769,31 @@
     });
   }
 
+  var readyPingTimer = null;
+  function _startReadyPing() {
+    if (readyPingTimer) { clearInterval(readyPingTimer); readyPingTimer = null; }
+    var attempts = 0;
+    readyPingTimer = window.setInterval(function () {
+      attempts++;
+      // Stop once handshake completes, or after ~24s (60 × 400ms).
+      if (mapReady || attempts > 60) {
+        clearInterval(readyPingTimer);
+        readyPingTimer = null;
+        return;
+      }
+      if (mapFrame && mapFrame.contentWindow) {
+        try {
+          mapFrame.contentWindow.postMessage({ type: 'mygov:map:ping' }, window.location.origin);
+        } catch (e) {}
+      }
+    }, 400);
+  }
+
   mapFrame.addEventListener('load', function () {
     mapReady = false;
     clearTimeout(visRetryTimer);
     visRetryCount = 0;
+    _startReadyPing();
     // Add hover tooltips to the four map demo buttons (rendered inside the map iframe bundle).
     // This keeps the map bundle untouched while making the UI self-explanatory.
     window.setTimeout(function () {
@@ -792,6 +813,10 @@
       } catch (e) {}
     }, 250);
   });
+
+  // Kick the ping immediately too — the iframe's load event may have
+  // fired before our listener attached on a fast same-origin response.
+  _startReadyPing();
 
   sourceFrame.addEventListener('load', function () {
     try {
@@ -858,7 +883,7 @@
           party: mpParty,
           source: 'mp-page'
         };
-        if (mapFrame && mapFrame.contentWindow && mapReady) {
+        if (mapFrame && mapFrame.contentWindow) {
           mapFrame.contentWindow.postMessage({
             type: 'mygov:map:setMode',
             mode: 'highlight',
@@ -1105,7 +1130,7 @@
         party: party,
         source: 'search'
       };
-      if (mapFrame && mapFrame.contentWindow && mapReady) {
+      if (mapFrame && mapFrame.contentWindow) {
         mapFrame.contentWindow.postMessage({
           type: 'mygov:map:setMode',
           mode: 'highlight',
