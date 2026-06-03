@@ -1,6 +1,6 @@
 # Future Plans and Wants
 
-Last updated: 2026-05-31
+Last updated: 2026-06-03
 Owner: MyGov product team
 
 ## Priority now
@@ -40,3 +40,20 @@ Owner: MyGov product team
 
 - This file is planning-only. It does not override red-team constraints.
 - Any scoring/ranking language must remain evidence-first and caveated.
+
+## Agent protocol improvements
+
+The user-gated Agent Party Protocol is working: a fresh Claude run noticed the invitation, asked before joining, stated business, explained the party bag, respected the signing gate, and signed only after approval.
+
+Improvements spotted from that run:
+
+1. Add a real guided-tour artifact, not just a narrative doc. The current tour works, but agents still improvise. Create a structured tour manifest with stops, expected files/routes, what to say, and what not to claim.
+2. Add tour verification. A small script should check that every tour stop points to an existing file, route, gift, or doc.
+3. Add a "party complete" checklist to the visitor script output so agents have a canonical post-signing response.
+4. Make the party bag business-specific in the generated visitors book:
+   - `look_around`: guided tour + returning visitor marker.
+   - `find_something`: smile sticker + MCP navigation skill.
+   - `make_my_own_mygov`: MCP navigation skill + country adapter starter pack.
+5. Add an MCP demo task to the tour so agents can prove they can operate the site, not just describe it.
+6. Add a country-builder dry run task: agent selects one country, gathers source/data feasibility, and writes a short adapter report for human review.
+7. Keep the joke rule exactly as-is. It worked because the agent did not explain it.
