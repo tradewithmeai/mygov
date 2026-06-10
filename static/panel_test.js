@@ -8,10 +8,14 @@
   var currentMapData = {};
   // Track the source of currentMapData so vote-split can know whether the
   // cached data is real vote data (from a clicked division) or stale data
-  // from a previous wedge click (party / gender / rebel-rate). Without this
+  // from a previous wedge click (party / gender / rebel split). Without this
   // the Vote wedge would re-paint the map with whatever data was last
   // loaded, regardless of source.
-  var currentMapDataKind = null;     // 'votes' | 'party' | 'gender' | 'rebel-rate' | null
+  var currentMapDataKind = null;
+  var selectedDivisionId = null;
+  var selectedDivisionPayload = null;
+  var selectedMapMode = 'vote-split';
+  var selectedSourceView = 'yourgov-summary';
 
   // ── Stub helpers for elements that no longer exist after the
   //    minimalist-launch UI cleanup. They keep legacy code paths
@@ -44,8 +48,12 @@
   var selectionSource = document.getElementById('selection-source');
   var visualiseInstruction = document.getElementById('visualise-instruction') || _noopBtn();
   var legendEl = document.getElementById('map-legend');
-  // Deprecated: Source Lens list removed from the UI, but legacy handlers remain harmless if null.
   var sourceLensList = document.getElementById('source-lens-list');
+  var sourceDivisions = null;
+  var sourceViewSelect = document.getElementById('source-view-select');
+  var sourceSummary = document.getElementById('source-summary');
+  var yourgovSummaryPanel = document.getElementById('yourgov-summary');
+  var sourceFramePanel = document.getElementById('source-frame-panel');
   var pendingMapPayload = null;
   var pendingMapTimer = null;
   var mapReady = false;
@@ -90,8 +98,11 @@
   }
 
   function openInSourcePane(url) {
-    if (!url) return;
-    ensurePublicWhipLoaded();
+    if (!url || !sourceFrame) return;
+    if (sourceViewSelect) sourceViewSelect.value = 'publicwhip-record';
+    selectedSourceView = 'publicwhip-record';
+    if (yourgovSummaryPanel) yourgovSummaryPanel.hidden = true;
+    if (sourceFramePanel) sourceFramePanel.hidden = false;
     sourceFrame.src = url;
   }
 
@@ -318,14 +329,14 @@
 
   // Wedge → applyTopic delegation, driven by data-mode (decoupled from ID).
   // data-mode values match the wedge contract from the template:
-  //   vote-split | party-split | gender-split | rebel-rate
+  //   vote-split | party-split | gender-split | rebel-split
   // Mapped to the existing applyTopic keys to preserve the map_mode payload
-  // sent to the iframe (votes / party / gender / rebel-rate).
+  // sent to the iframe.
   var WEDGE_TO_TOPIC = {
     'vote-split': 'vote-split',
-    'party-split': 'party',
-    'gender-split': 'gender',
-    'rebel-rate': 'rebel-rate'
+    'party-split': 'party-split',
+    'gender-split': 'gender-split',
+    'rebel-split': 'rebel-split'
   };
   // Colour-key data per wedge, in the order they appear around the quadrant arc.
   var WEDGE_KEYS = {
@@ -333,14 +344,14 @@
     'party-split':  [{ c: '#1d4ed8', l: 'Con' }, { c: '#dc2626', l: 'Lab' }, { c: '#f59e0b', l: 'LD' },
                      { c: '#16a34a', l: 'Green' }, { c: '#6b7280', l: 'Other' }],
     'gender-split': [{ c: '#38bdf8', l: 'M' }, { c: '#f472b6', l: 'F' }, { c: '#6b7280', l: 'Unknown' }],
-    'rebel-rate':   [{ c: '#334155', l: 'Low' }, { c: '#f59e0b', l: 'High' }, { c: '#6b7280', l: 'No data' }]
+    'rebel-split':  [{ c: '#334155', l: 'Low' }, { c: '#f59e0b', l: 'High' }, { c: '#6b7280', l: 'No data' }]
   };
   // Quadrant angular range (deg, 0 = 12 o'clock, clockwise).
   var WEDGE_QUADRANT = {
     'vote-split':   { start:   0, end:  90 },     // NE
     'party-split':  { start:  90, end: 180 },     // SE
     'gender-split': { start: 180, end: 270 },     // SW
-    'rebel-rate':   { start: 270, end: 360 }      // NW
+    'rebel-split':  { start: 270, end: 360 }      // NW
   };
   function renderWedgeKey(mode) {
     var arc = document.getElementById('wedge-key-arc');
@@ -431,7 +442,7 @@
         { color: '#f472b6', text: 'F',       aria: 'Pink: Female MP' },
         { color: '#6b7280', text: 'Unknown', aria: 'Grey: Gender unknown / missing data' }
       ],
-      'rebel-rate': [
+      'rebel-split': [
         { color: '#6b7280', text: 'Insufficient data', aria: 'Grey: Insufficient data' },
         { color: '#334155', text: 'Low',               aria: 'Dark slate: Low rebellion rate' },
         { color: '#f59e0b', text: 'Higher',            aria: 'Amber: Higher rebellion rate' }
@@ -469,63 +480,142 @@
   //
   // Legend is rendered from the SAME resolved mode used for the paint,
   // so map + legend can never drift.
+  function normaliseMapMode(mode) {
+    if (mode === 'rebel-rate') return 'rebel-split';
+    return mode || 'vote-split';
+  }
+
   var TOPIC_BY_MODE = {
-    'vote-split':   { btn: function () { return topicVoteSplit; },   kind: 'votes',      legend: 'vote-split' },
-    'party-split':  { btn: function () { return topicPartySplit; },  kind: 'party',      legend: 'party',      url: '/api/lens/map/party' },
-    'gender-split': { btn: function () { return topicGenderSplit; }, kind: 'gender',     legend: 'gender',     url: '/api/lens/map/gender' },
-    'rebel-rate':   { btn: function () { return topicRebelRate; },   kind: 'rebel-rate', legend: 'rebel-rate', url: '/api/lens/map/rebel-rate' }
+    'vote-split':   { btn: function () { return topicVoteSplit; },   kind: 'vote-split',   legend: 'vote-split' },
+    'party-split':  { btn: function () { return topicPartySplit; },  kind: 'party-split',  legend: 'party' },
+    'gender-split': { btn: function () { return topicGenderSplit; }, kind: 'gender-split', legend: 'gender' },
+    'rebel-split':  { btn: function () { return topicRebelRate; },   kind: 'rebel-split',  legend: 'rebel-split' }
   };
 
+  function renderSourceSummary(payload) {
+    if (!sourceSummary) return;
+    while (sourceSummary.firstChild) sourceSummary.removeChild(sourceSummary.firstChild);
+
+    if (!payload || !payload.division) {
+      var loading = document.createElement('p');
+      loading.className = 'source-lens-loading';
+      loading.textContent = 'Select a division to see the YourGov summary.';
+      sourceSummary.appendChild(loading);
+      return;
+    }
+
+    var division = payload.division || {};
+    var counts = payload.counts || {};
+    var dataQuality = payload.data_quality || {};
+
+    var title = document.createElement('h3');
+    title.textContent = division.title || 'Selected division';
+    sourceSummary.appendChild(title);
+
+    var meta = document.createElement('p');
+    meta.className = 'source-summary-meta';
+    meta.textContent = [
+      division.date || 'date unknown',
+      'Division ' + (division.division_id || selectedDivisionId || 'unknown'),
+      'Mode ' + (payload.mode || selectedMapMode)
+    ].join(' | ');
+    sourceSummary.appendChild(meta);
+
+    var stats = document.createElement('div');
+    stats.className = 'source-summary-stats';
+    [
+      ['Aye', counts.aye || 0],
+      ['No', counts.no || 0],
+      ['Unknown', counts.unknown || 0],
+      ['Mapped MPs', dataQuality.mapped_member_rows || Object.keys(payload.map_data || {}).length]
+    ].forEach(function (item) {
+      var stat = document.createElement('span');
+      stat.className = 'source-summary-stat';
+      var strong = document.createElement('strong');
+      strong.textContent = String(item[1]);
+      var label = document.createElement('em');
+      label.textContent = item[0];
+      stat.appendChild(strong);
+      stat.appendChild(label);
+      stats.appendChild(stat);
+    });
+    sourceSummary.appendChild(stats);
+
+    var caveat = document.createElement('p');
+    caveat.className = 'caveat';
+    caveat.textContent = payload.caveat || 'Map colours are scoped to the selected division.';
+    sourceSummary.appendChild(caveat);
+  }
+
+  function updateSourceView() {
+    selectedSourceView = sourceViewSelect ? sourceViewSelect.value : selectedSourceView;
+    if (selectedSourceView !== 'publicwhip-record') selectedSourceView = 'yourgov-summary';
+
+    if (yourgovSummaryPanel) yourgovSummaryPanel.hidden = selectedSourceView !== 'yourgov-summary';
+    if (sourceFramePanel) sourceFramePanel.hidden = selectedSourceView !== 'publicwhip-record';
+
+    if (selectedSourceView !== 'publicwhip-record') return;
+    if (!selectedDivisionId) {
+      setStatus('Select a division before opening the PublicWhip record.', 'warn');
+      return;
+    }
+    if (!sourceFrame) return;
+    var nextSrc = '/publicwhip/division/' + encodeURIComponent(selectedDivisionId);
+    if (sourceFrame.getAttribute('src') !== nextSrc) sourceFrame.setAttribute('src', nextSrc);
+  }
+
+  async function ensureSelectedDivision() {
+    if (selectedDivisionId) return selectedDivisionId;
+
+    var response = await fetch('/api/lens/source-divisions?limit=1');
+    var payload = await response.json();
+    if (!response.ok || (payload && payload.ok === false)) {
+      throw new Error((payload && payload.error) || 'Could not load latest division');
+    }
+    var divisions = (payload && (payload.divisions || (Array.isArray(payload) ? payload : []))) || [];
+    if (!divisions.length) throw new Error('No divisions in dataset');
+
+    var latest = divisions[0];
+    selectedDivisionId = latest.division_id || latest.id;
+    selectedDivisionPayload = selectedDivisionPayload || { division: latest };
+    return selectedDivisionId;
+  }
+
+  async function loadDivisionMapPayload(mode) {
+    mode = normaliseMapMode(mode || selectedMapMode);
+    var divisionId = await ensureSelectedDivision();
+    var response = await fetch('/api/lens/division/' + encodeURIComponent(divisionId) + '/map?mode=' + encodeURIComponent(mode));
+    var payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error || 'Could not load map mode');
+    }
+
+    selectedDivisionPayload = payload;
+    if (payload.division && payload.division.division_id) selectedDivisionId = payload.division.division_id;
+    lastDivisionLabel = (payload.division && payload.division.title) || ('division ' + selectedDivisionId);
+    renderSourceSummary(payload);
+    updateSourceView();
+    return payload;
+  }
+
   async function setMapMode(mode) {
+    mode = normaliseMapMode(mode);
     var spec = TOPIC_BY_MODE[mode];
     if (!spec) return;
+    selectedMapMode = mode;
 
     // Step 1: active wedge + legend swap immediately — user feedback
     // happens before any network round-trip.
     setTopicActive(spec.btn());
     setLegend(spec.legend);
 
-    // Step 2: load data.
-    if (mode === 'vote-split') {
-      // Prefer the user's already-selected division if we have one.
-      if (currentMapDataKind === 'votes' && currentMapData && Object.keys(currentMapData).length) {
-        currentMapDataKind = 'votes';
-        sendMapColours({ map_mode: 'votes', map_data: currentMapData });
-        setStatus('Vote split applied (selected division).', 'ok');
-        return;
-      }
-      // No prior selection — fall back to the most-recent division so
-      // the wedge ALWAYS repaints. This replaces the old "Pick a
-      // division first" no-op that silently aborted the paint.
-      setStatus('Loading default vote split…', 'ok');
-      try {
-        var listResp = await fetch('/api/lens/source-divisions?limit=1');
-        var list = await listResp.json();
-        var divs = (list && (list.divisions || (Array.isArray(list) ? list : []))) || [];
-        if (!divs.length) throw new Error('No divisions in dataset');
-        var defaultId = divs[0].division_id || divs[0].id;
-        var divResp = await fetch('/api/lens/division/' + encodeURIComponent(defaultId));
-        var divData = await divResp.json();
-        if (!divResp.ok || !divData.ok) throw new Error(divData.error || 'Could not load default division');
-        currentMapData = divData.map_data || {};
-        currentMapDataKind = 'votes';
-        lastDivisionLabel = (divData.division && divData.division.title) || ('division ' + defaultId);
-        sendMapColours({ map_mode: 'votes', map_data: currentMapData });
-        setStatus('Vote split applied (default: ' + lastDivisionLabel + ').', 'ok');
-      } catch (err) {
-        setStatus('Could not load vote split: ' + err.message, 'warn');
-      }
-      return;
-    }
-
-    // party / gender / rebel-rate — same shape: fetch endpoint, paint.
-    setStatus('Loading map mode…', 'ok');
+    setStatus('Loading YourGov ' + mode + '...', 'ok');
     try {
-      var resp = await fetch(spec.url);
-      var data = await resp.json();
-      if (!resp.ok || !data.ok) throw new Error(data.error || 'Could not load map mode');
+      var data = await loadDivisionMapPayload(mode);
       currentMapDataKind = spec.kind;
-      sendMapColours({ map_mode: data.map_mode || spec.kind, map_data: data.map_data || {} });
+      renderSelection(data);
+      enrichSelectionWithMP();
+      sendMapColours(data);
       setStatus('Map updated: ' + mode + '.', 'ok');
     } catch (err) {
       setStatus(err.message, 'warn');
@@ -539,7 +629,8 @@
       'vote-split': 'vote-split',
       'party':      'party-split',
       'gender':     'gender-split',
-      'rebel-rate': 'rebel-rate'
+      'rebel-rate': 'rebel-split',
+      'rebel-split': 'rebel-split'
     };
     var mode = aliasToMode[topicKey] || topicKey;
     return setMapMode(mode);
@@ -597,6 +688,7 @@
     selectionCaveat.textContent = payload.caveat || '';
     selectionSource.href = division.source_url || '/publicwhip';
     selectionSource.textContent = 'Open division record →';
+    selectionSource.hidden = false;
     if (selectionProfile) selectionProfile.hidden = true;
   }
 
@@ -613,12 +705,10 @@
   }
 
   async function visualiseDivision(divisionId, source) {
-    setStatus('Loading division ' + divisionId + '…', 'ok');
-    var response = await fetch('/api/lens/division/' + encodeURIComponent(divisionId));
-    var payload = await response.json();
-    if (!response.ok || !payload.ok) {
-      throw new Error(payload.error || 'Could not load division');
-    }
+    selectedDivisionId = divisionId;
+    selectedMapMode = normaliseMapMode(selectedMapMode);
+    setStatus('Loading division ' + divisionId + '...', 'ok');
+    var payload = await loadDivisionMapPayload(selectedMapMode);
     if (!payload.map_data || !Object.keys(payload.map_data).length) {
       setStatus('Could not map this vote to constituency data.', 'warn');
       return;
@@ -630,14 +720,13 @@
     document.querySelectorAll('.division-row').forEach(function (r) {
       r.classList.toggle('active', r.dataset.divisionId === String(divisionId));
     });
-    currentMapDataKind = 'votes';
+    currentMapDataKind = selectedMapMode;
     sendMapColours(payload);
-    setLegend('vote-split');
+    var spec = TOPIC_BY_MODE[selectedMapMode] || TOPIC_BY_MODE['vote-split'];
+    setLegend(spec.legend);
     renderSelection(payload);
     enrichSelectionWithMP();
-    // Reflect the active mode on the Vote wedge so the user sees the
-    // change of state when a division is clicked from the right pane.
-    if (typeof setTopicActive === 'function' && topicVoteSplit) setTopicActive(topicVoteSplit);
+    if (typeof setTopicActive === 'function') setTopicActive(spec.btn());
   }
 
   async function recogniseUrl(url) {
@@ -1527,8 +1616,14 @@
     if (event.data.type === 'mygov:map:applied') setStep(3);
   });
 
-  ensurePublicWhipLoaded();
-  setStatus(PUBLICWHIP_STATUS, 'ok');
+  if (sourceViewSelect) {
+    selectedSourceView = sourceViewSelect.value || 'yourgov-summary';
+    sourceViewSelect.addEventListener('change', updateSourceView);
+  }
+  updateSourceView();
+  loadSourceDivisions();
+  setMapMode(selectedMapMode);
+  setStatus('YourGov Summary ready. PublicWhip loads only when selected.', 'ok');
   updateInstruction();
 
   // ── Outer nav ring (Lens / MyGov / Global) ──────────────────

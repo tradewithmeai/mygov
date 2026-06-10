@@ -3017,5 +3017,215 @@ html[dir="rtl"] .lens-poc > .source-pane {
   html[dir="rtl"] .lens-poc > .source-pane { border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important; }
 }
 
+/* YourGov Source Lens shell */
+.yourgov-panel {
+  overflow-y: auto;
+  gap: 12px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(11, 16, 32, 1) 100%);
+}
+
+.yg-brand {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(15, 23, 42, 0.82)),
+    rgba(15, 23, 42, 0.92);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+}
+
+.yg-brand h1 {
+  font-size: 22px;
+  color: #f8fafc;
+}
+
+.yg-logo {
+  width: 86px;
+  max-width: 24vw;
+  min-height: 34px;
+  object-fit: contain;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.source-detail-panel {
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.74);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18);
+}
+
+.source-select-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #bae6fd;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#source-view-select {
+  width: 100%;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.72);
+  color: #e5e7eb;
+  font: 700 14px/1.2 var(--font-body);
+  padding: 11px 12px;
+}
+
+#source-view-select:focus {
+  outline: 0;
+  border-color: rgba(125, 211, 252, 0.75);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+}
+
+.yourgov-search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.yourgov-search-input,
+.yourgov-panel .map-search-input {
+  height: 42px;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.82) !important;
+  padding: 0 12px;
+}
+
+.yourgov-search-row button {
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+  font-weight: 800;
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.yourgov-panel .selection-card {
+  min-height: 0;
+  border-top: 0;
+}
+
+.yourgov-panel .source-link {
+  border-radius: 999px;
+  border-color: rgba(125, 211, 252, 0.30);
+  color: #bae6fd;
+}
+
+.source-summary-meta {
+  margin: 6px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.source-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.source-summary-stat {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.42);
+}
+
+.source-summary-stat strong {
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.source-summary-stat em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.source-frame-panel {
+  position: relative;
+  min-height: 380px;
+}
+
+.source-frame-panel .source-frame-wrap {
+  height: min(52vh, 520px);
+  min-height: 340px;
+  padding-top: 0;
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 14px;
+  background: #020617;
+}
+
+.source-frame-panel iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #f8fafc;
+}
+
+.source-frame-panel .source-nav-float {
+  top: 24px;
+  right: 24px;
+}
+
+.division-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.yourgov-panel .source-status {
+  padding: 4px 8px;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: 999px;
+  background: rgba(22, 163, 74, 0.10);
+  font-size: 11px;
+}
+
+.yourgov-panel .source-lens-list {
+  max-height: 34vh;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+}
+
+@media (max-width: 920px) {
+  .yourgov-panel {
+    min-height: 100vh;
+    padding: 14px;
+  }
+
+  .yg-brand {
+    grid-template-columns: 1fr;
+  }
+
+  .source-summary-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .source-frame-panel .source-frame-wrap {
+    height: 58vh;
+  }
+}
 
 
