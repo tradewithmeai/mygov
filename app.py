@@ -1654,7 +1654,6 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
             "mapped_unknown_count": counts["unknown"],
             "source_aye_count": source_aye_count,
             "source_no_count": source_no_count,
-            "source_vote_count_gap": source_minus_mapped_vote_count,
             "source_vote_count_total": source_vote_count_total,
             "mapped_recorded_vote_count": mapped_recorded_vote_count,
             "source_minus_mapped_vote_count": source_minus_mapped_vote_count,
