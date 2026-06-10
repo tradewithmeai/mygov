@@ -18,6 +18,9 @@ DATA_QUALITY_FIELDS = {
     "source_aye_count",
     "source_no_count",
     "source_vote_count_gap",
+    "source_vote_count_total",
+    "mapped_recorded_vote_count",
+    "source_minus_mapped_vote_count",
 }
 
 
@@ -77,6 +80,15 @@ def test_division_map_payload_contract(mode):
     )
     assert data_quality["source_aye_count"] == payload["division"]["aye_count"]
     assert data_quality["source_no_count"] == payload["division"]["no_count"]
+    assert data_quality["source_vote_count_total"] == (
+        data_quality["source_aye_count"] + data_quality["source_no_count"]
+    )
+    assert data_quality["mapped_recorded_vote_count"] == (
+        data_quality["mapped_aye_count"] + data_quality["mapped_no_count"]
+    )
+    assert data_quality["source_minus_mapped_vote_count"] == (
+        data_quality["source_vote_count_total"] - data_quality["mapped_recorded_vote_count"]
+    )
     assert "motive" in payload["caveat"].lower()
     assert "wrongdoing" in payload["caveat"].lower()
 
@@ -91,9 +103,27 @@ def test_division_map_payload_contract(mode):
         "label",
         "source",
         "mode",
+        "category",
+        "legend_key",
     }.issubset(sample)
     assert sample["mode"] == mode
     assert sample["vote"] in sample["label"]
+    assert sample["vote"] == sample["division_vote"]
+
+    if mode == "vote-split":
+        assert sample["category"] == sample["vote"] == sample["division_vote"]
+        assert sample["legend_key"] == sample["category"]
+    elif mode == "party-split":
+        assert sample["category"] == sample["party"]
+        assert sample["legend_key"] == sample["party"]
+        assert sample["division_vote"] in sample["label"]
+    elif mode == "gender-split":
+        assert sample["category"] in {"M", "F", "Unknown"}
+        assert sample["legend_key"] == sample["category"]
+        assert sample["division_vote"] in sample["label"]
+    else:
+        assert sample["category"] == sample["legend_key"] == sample["rebel_status"]
+        assert sample["division_vote"] in sample["label"]
 
     vote_sample = payload["votes"][0]
     assert {
@@ -106,8 +136,11 @@ def test_division_map_payload_contract(mode):
         "label",
         "source",
         "mode",
+        "category",
+        "legend_key",
     }.issubset(vote_sample)
     assert vote_sample["mode"] == mode
+    assert vote_sample["vote"] == vote_sample["division_vote"]
 
 
 @pytest.mark.parametrize("mode", ["party-split", "gender-split", "rebel-split"])
@@ -152,6 +185,9 @@ def test_division_2355_documents_source_count_gap():
     assert payload["data_quality"]["selected_division_vote_rows"] == 470
     assert payload["data_quality"]["mapped_member_rows"] == 647
     assert payload["data_quality"]["source_vote_count_gap"] == 8
+    assert payload["data_quality"]["source_vote_count_total"] == 478
+    assert payload["data_quality"]["mapped_recorded_vote_count"] == 470
+    assert payload["data_quality"]["source_minus_mapped_vote_count"] == 8
 
 
 def test_legacy_division_endpoint_keeps_vote_map_compatibility():

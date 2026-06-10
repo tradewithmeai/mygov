@@ -49,11 +49,35 @@ def test_agent_map_payload_party():
 def test_agent_map_payload_vote_default_division():
     client = _client_with_token()
     r = client.get("/api/agent/map_payload?mode=vote-split", headers=_auth_header())
-    assert r.status_code in (200, 404)
-    if r.status_code == 200:
-        data = r.get_json()["data"]
-        assert data["mode"] == "vote-split"
-        assert "map_data" in data
+    assert r.status_code == 200
+    data = r.get_json()["data"]
+    assert data["mode"] == "vote-split"
+    assert data["map_data"]
+
+
+@pytest.mark.parametrize("division_id", ["abc", "", "0", "-1"])
+def test_agent_map_payload_rejects_invalid_explicit_division_id(division_id):
+    client = _client_with_token()
+
+    response = client.get(
+        f"/api/agent/map_payload?mode=vote-split&division_id={division_id}",
+        headers=_auth_header(),
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["ok"] is False
+
+
+def test_agent_map_payload_returns_404_for_missing_positive_division_id():
+    client = _client_with_token()
+
+    response = client.get(
+        "/api/agent/map_payload?mode=vote-split&division_id=9999999",
+        headers=_auth_header(),
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["ok"] is False
 
 
 @pytest.mark.parametrize("mode", ["vote-split", "party-split", "gender-split", "rebel-split"])

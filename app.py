@@ -88,6 +88,7 @@ MODE_ALIASES = {
     "rebel-rate": "rebel-split",
 }
 DIVISION_MAP_MODES = {"vote-split", "party-split", "gender-split", "rebel-split"}
+PARTY_MAJORITY_THRESHOLD = 0.60
 VOTE_COLOURS = {
     "Aye": "#16a34a",
     "No": "#dc2626",
@@ -1444,9 +1445,9 @@ def _party_majorities_for_division(rows):
         total = counts[0] + counts[1]
         if total <= 0:
             continue
-        if counts[1] / total >= 0.60:
+        if counts[1] / total >= PARTY_MAJORITY_THRESHOLD:
             party_majorities[party] = 1
-        elif counts[0] / total >= 0.60:
+        elif counts[0] / total >= PARTY_MAJORITY_THRESHOLD:
             party_majorities[party] = 0
     return party_majorities
 
@@ -1549,36 +1550,39 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
         party = (row["party"] or "Unknown").strip() or "Unknown"
         majority = None
         gender = None
+        rebel_status = None
 
+        vote = division_vote
         if mode == "vote-split":
-            vote = division_vote
+            category = division_vote
             colour = VOTE_COLOURS[vote]
             label = f"{vote}: {row['name']} on {title}"
         elif mode == "party-split":
-            vote = division_vote
+            category = party
             colour = PARTY_COLOURS.get(party, "#8a97ab")
             label = f"{party}: {row['name']} voted {vote} on {title}"
         elif mode == "gender-split":
-            vote = division_vote
             gender = _member_gender_from_posts(row["current_posts"])
+            category = gender
             gender_label = "Unknown gender" if gender == "Unknown" else gender
             colour = GENDER_COLOURS.get(gender, GENDER_COLOURS["Unknown"])
             label = f"Gender {gender_label}: {row['name']} voted {vote} on {title}"
         else:
             if division_vote == "Absent/unknown":
-                vote = "absent_or_unknown"
+                rebel_status = "absent_or_unknown"
             elif party == "Unknown" or party.lower() == "independent":
-                vote = "independent_or_no_party_grouping"
+                rebel_status = "independent_or_no_party_grouping"
             else:
                 majority = party_majorities.get(party)
                 if majority is None:
-                    vote = "no_clear_party_majority"
+                    rebel_status = "no_clear_party_majority"
                 elif raw_vote == majority:
-                    vote = "with_party_majority"
+                    rebel_status = "with_party_majority"
                 else:
-                    vote = "against_party_majority"
-            colour = REBEL_COLOURS[vote]
-            label = f"{vote}: {row['name']} ({party}) voted {division_vote} on {title}"
+                    rebel_status = "against_party_majority"
+            category = rebel_status
+            colour = REBEL_COLOURS[rebel_status]
+            label = f"{rebel_status}: {row['name']} ({party}) voted {vote} on {title}"
 
         item = {
             "constituency": row["constituency"],
@@ -1586,6 +1590,8 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
             "name": row["name"],
             "party": party,
             "vote": vote,
+            "category": category,
+            "legend_key": category,
             "color": colour,
             "label": label,
             "source": source,
@@ -1594,6 +1600,8 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
         }
         if gender is not None:
             item["gender"] = gender
+        if rebel_status is not None:
+            item["rebel_status"] = rebel_status
         if majority in (0, 1):
             item["party_majority_vote"] = _vote_label(majority)
         votes.append(item)
@@ -1602,6 +1610,9 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
     source_url = f"/publicwhip/division/{meta['division_id']}"
     source_aye_count = int(meta["aye_count"] or 0)
     source_no_count = int(meta["no_count"] or 0)
+    source_vote_count_total = source_aye_count + source_no_count
+    mapped_recorded_vote_count = counts["aye"] + counts["no"]
+    source_minus_mapped_vote_count = source_vote_count_total - mapped_recorded_vote_count
 
     return {
         "ok": True,
@@ -1643,9 +1654,10 @@ def _division_map_payload(division_id, mode="vote-split", source="publicwhip"):
             "mapped_unknown_count": counts["unknown"],
             "source_aye_count": source_aye_count,
             "source_no_count": source_no_count,
-            "source_vote_count_gap": (
-                (source_aye_count + source_no_count) - (counts["aye"] + counts["no"])
-            ),
+            "source_vote_count_gap": source_minus_mapped_vote_count,
+            "source_vote_count_total": source_vote_count_total,
+            "mapped_recorded_vote_count": mapped_recorded_vote_count,
+            "source_minus_mapped_vote_count": source_minus_mapped_vote_count,
             "source": source,
         },
         "caveat": (
@@ -2467,12 +2479,24 @@ def agent_search_mps():
 @require_agent_token
 def agent_map_payload():
     mode = _normalise_division_map_mode(request.args.get("mode") or "vote-split")
-    division_id = request.args.get("division_id", type=int)
+    raw_division_id = request.args.get("division_id")
+    division_id = None
 
     if not mode:
         return _agent_response(error="Unsupported mode", status=400)
 
-    if not division_id:
+    if "division_id" in request.args:
+        raw_division_id = (raw_division_id or "").strip()
+        if not raw_division_id:
+            return _agent_response(error="division_id must be a positive integer", status=400)
+        try:
+            division_id = int(raw_division_id)
+        except ValueError:
+            return _agent_response(error="division_id must be a positive integer", status=400)
+        if division_id <= 0:
+            return _agent_response(error="division_id must be a positive integer", status=400)
+
+    if division_id is None:
         conn = get_publicwhip_conn()
         latest = conn.execute(
             """
