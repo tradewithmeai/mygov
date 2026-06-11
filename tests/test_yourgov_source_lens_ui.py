@@ -63,6 +63,15 @@ def _function_body(js, name):
     raise AssertionError(f"{name} function body not closed")
 
 
+def _tag_with_id(html, tag_name, element_id):
+    match = re.search(
+        rf"<{tag_name}\b(?=[^>]*\bid=\"{re.escape(element_id)}\")[^>]*>",
+        html,
+    )
+    assert match, f"{element_id} {tag_name} tag not found"
+    return match.group(0)
+
+
 def test_source_lens_renders_yourgov_shell():
     html = _source_lens_html()
 
@@ -87,6 +96,47 @@ def test_source_lens_renders_yourgov_shell():
     assert 'value="yourgov-summary"' in html
     assert 'value="publicwhip-record"' in html
     assert 'data-mode="rebel-split"' in html
+
+
+def test_map_mode_buttons_render_as_synced_radios():
+    html = _source_lens_html()
+
+    expected = {
+        "topic-vote-split": "true",
+        "topic-party-split": "false",
+        "topic-gender-split": "false",
+        "topic-rebel-rate": "false",
+    }
+
+    for element_id, checked in expected.items():
+        button = _tag_with_id(html, "button", element_id)
+        assert 'role="radio"' in button
+        assert f'aria-checked="{checked}"' in button
+
+
+def test_set_topic_active_syncs_radio_aria_checked():
+    js = _panel_js()
+    set_topic_active = _function_body(js, "setTopicActive")
+
+    assert re.search(r"\.setAttribute\(\s*['\"]aria-checked['\"]", set_topic_active)
+    assert "b === activeBtn" in set_topic_active
+    assert "'true'" in set_topic_active
+    assert "'false'" in set_topic_active
+
+
+def test_source_status_is_polite_status_live_region():
+    html = _source_lens_html()
+
+    source_status = _tag_with_id(html, "span", "source-status")
+    assert 'aria-live="polite"' in source_status
+    assert 'role="status"' in source_status
+
+
+def test_load_source_divisions_does_not_interpolate_error_html():
+    js = _panel_js()
+    load_source_divisions = _function_body(js, "loadSourceDivisions")
+
+    assert not re.search(r"innerHTML\s*=\s*[^\n;]*err\.message", load_source_divisions)
 
 
 def test_source_dropdown_defaults_to_yourgov_summary():

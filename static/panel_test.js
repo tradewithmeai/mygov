@@ -154,7 +154,11 @@
       sourceDivisions = data.divisions;
       renderDivisionRows(sourceDivisions);
     } catch (err) {
-      sourceLensList.innerHTML = '<p class="source-lens-loading warn">Could not load vote records: ' + err.message + '</p>';
+      while (sourceLensList.firstChild) sourceLensList.removeChild(sourceLensList.firstChild);
+      var warn = document.createElement('p');
+      warn.className = 'source-lens-loading warn';
+      warn.textContent = 'Could not load vote records: ' + err.message;
+      sourceLensList.appendChild(warn);
     }
   }
 
@@ -422,6 +426,7 @@
     [topicVoteSplit, topicPartySplit, topicGenderSplit, topicRebelRate].forEach(function (b) {
       if (!b) return;
       b.classList.toggle('active', b === activeBtn);
+      b.setAttribute('aria-checked', b === activeBtn ? 'true' : 'false');
     });
   }
 

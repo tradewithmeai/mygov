@@ -40,16 +40,16 @@
       <div id="service-menu" class="service-menu always-on" role="group" aria-label="Map service controls">
         <!-- Ring 2: quartered map-mode picker (Vote / Party / Gender / Rebel) -->
         <div class="service-action ring-2 is-shown" data-action="modes" role="radiogroup" aria-label="Map mode">
-          <button type="button" id="topic-vote-split"   class="ring-wedge wedge-ne active" data-mode="vote-split"   title="Vote"   aria-label="Map mode: Vote split — show how each constituency's MP voted on the selected division" aria-checked="true">
+          <button type="button" id="topic-vote-split"   class="ring-wedge wedge-ne active" data-mode="vote-split"   title="Vote"   aria-label="Map mode: Vote split — show how each constituency's MP voted on the selected division" role="radio" aria-checked="true">
             <span class="wedge-label" aria-hidden="true">Vote</span>
           </button>
-          <button type="button" id="topic-party-split"  class="ring-wedge wedge-se" data-mode="party-split"  title="Party"  aria-label="Map mode: Party split — colour each constituency by its current MP's party" aria-checked="false">
+          <button type="button" id="topic-party-split"  class="ring-wedge wedge-se" data-mode="party-split"  title="Party"  aria-label="Map mode: Party split — colour each constituency by its current MP's party" role="radio" aria-checked="false">
             <span class="wedge-label" aria-hidden="true">Party</span>
           </button>
-          <button type="button" id="topic-gender-split" class="ring-wedge wedge-sw" data-mode="gender-split" title="Gender" aria-label="Map mode: Gender split — colour each constituency by its current MP's gender" aria-checked="false">
+          <button type="button" id="topic-gender-split" class="ring-wedge wedge-sw" data-mode="gender-split" title="Gender" aria-label="Map mode: Gender split — colour each constituency by its current MP's gender" role="radio" aria-checked="false">
             <span class="wedge-label" aria-hidden="true">Gender</span>
           </button>
-          <button type="button" id="topic-rebel-rate"   class="ring-wedge wedge-nw" data-mode="rebel-split"  title="Rebel"  aria-label="Map mode: Rebel split - colour each constituency by whether its MP voted against their party majority on the selected division" aria-checked="false">
+          <button type="button" id="topic-rebel-rate"   class="ring-wedge wedge-nw" data-mode="rebel-split"  title="Rebel"  aria-label="Map mode: Rebel split - colour each constituency by whether its MP voted against their party majority on the selected division" role="radio" aria-checked="false">
             <span class="wedge-label" aria-hidden="true">Rebel</span>
           </button>
         </div>
@@ -239,7 +239,7 @@
     <section class="source-detail-panel division-results-panel" aria-label="Division results">
       <div class="division-results-header">
         <p class="eyebrow">Division results</p>
-        <span id="source-status" class="source-status ok">YourGov Summary ready.</span>
+        <span id="source-status" class="source-status ok" aria-live="polite" role="status">YourGov Summary ready.</span>
       </div>
       <div id="source-lens-list" class="source-lens-list division-results" aria-live="polite">
         <p class="source-lens-loading">Loading vote records...</p>
