@@ -21,6 +21,12 @@ def _source_lens_html():
     return response.get_data(as_text=True)
 
 
+def _static_text(path):
+    response = _client().get(path)
+    assert response.status_code == 200
+    return response.get_data(as_text=True)
+
+
 def _panel_js():
     return (ROOT / "static" / "panel_test.js").read_text(encoding="utf-8")
 
@@ -112,3 +118,20 @@ def test_mobile_css_stacks_source_above_map_without_default_hiding():
     assert ".map-pane:not(.active)" not in css
     assert 'body[data-mobile-view="source"] .map-pane' not in css
     assert 'body[data-mobile-view="map"]    .source-pane' not in css
+
+
+def test_yourgov_static_svg_assets_are_served():
+    assets = {
+        "/static/img/favicon.svg": (),
+        "/static/img/yourgov-logo.svg": ("yourgov",),
+        "/static/img/yourgov-mark.svg": ("yourgov", "yg"),
+    }
+
+    for path, required_fragments in assets.items():
+        body = _static_text(path)
+        normalised = body.lower()
+        assert "<svg" in normalised
+        assert "crown" not in normalised
+        assert "gov.uk" not in normalised
+        if required_fragments:
+            assert any(fragment in normalised for fragment in required_fragments)
