@@ -1,0 +1,402 @@
+#!/usr/bin/env python
+from __future__ import annotations
+
+import argparse
+import html
+import json
+import re
+import sys
+from pathlib import Path
+
+import httpx
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from app import app, get_publicwhip_conn  # noqa: E402
+
+
+CORE_ROUTES = (
+    "/",
+    "/source-lens",
+    "/global",
+    "/publicwhip",
+    "/publicwhip/divisions",
+    "/publicwhip/mps",
+)
+
+MAP_MODES = (
+    "vote-split",
+    "party-split",
+    "gender-split",
+    "rebel-split",
+)
+
+COMMONS_VOTES_LATEST_URL = (
+    "https://commonsvotes-api.parliament.uk/data/divisions.json/search"
+)
+FRESHNESS_THRESHOLD_DIVISIONS = 5
+
+
+class Validation:
+    def __init__(self) -> None:
+        self.failures: list[str] = []
+
+    def pass_(self, label: str, detail: str = "") -> None:
+        suffix = f" - {detail}" if detail else ""
+        print(f"PASS {label}{suffix}")
+
+    def fail(self, label: str, detail: str) -> None:
+        message = f"{label}: {detail}"
+        self.failures.append(message)
+        print(f"FAIL {message}")
+
+    def check(self, label: str, condition: bool, detail: str) -> bool:
+        if condition:
+            self.pass_(label, detail)
+            return True
+        self.fail(label, detail)
+        return False
+
+    def finish(self) -> int:
+        if self.failures:
+            print(f"VALIDATION FAIL - {len(self.failures)} failure(s)")
+            for failure in self.failures:
+                print(f" - {failure}")
+            return 1
+        print("VALIDATION PASS")
+        return 0
+
+
+def _client():
+    app.config["TESTING"] = True
+    return app.test_client()
+
+
+def _visible_text(markup: str) -> str:
+    without_invisible = re.sub(
+        r"(?is)<(script|style|noscript)\b.*?</\1>",
+        " ",
+        markup,
+    )
+    without_tags = re.sub(r"(?s)<[^>]+>", " ", without_invisible)
+    return re.sub(r"\s+", " ", html.unescape(without_tags)).strip()
+
+
+def _json_response(client, path: str):
+    response = client.get(path)
+    try:
+        payload = response.get_json()
+    except Exception:
+        payload = None
+    return response, payload
+
+
+def latest_local_division_id() -> int:
+    conn = get_publicwhip_conn()
+    try:
+        row = conn.execute(
+            """
+            SELECT MAX(division_id) AS latest_id
+            FROM votes
+            WHERE title IS NOT NULL
+              AND aye_count > 0
+            """
+        ).fetchone()
+    finally:
+        conn.close()
+
+    latest_id = row["latest_id"] if row else None
+    if not latest_id:
+        raise RuntimeError("No local PublicWhip divisions were found.")
+    return int(latest_id)
+
+
+def check_routes(v: Validation, client) -> None:
+    for route in CORE_ROUTES:
+        response = client.get(route)
+        v.check(
+            f"route {route}",
+            response.status_code in {200, 301, 302, 303, 307, 308},
+            f"status {response.status_code}",
+        )
+
+
+def check_source_lens(v: Validation, client) -> None:
+    response = client.get("/source-lens")
+    body = response.get_data(as_text=True)
+    visible = _visible_text(body)
+
+    v.check(
+        "source-lens brand",
+        response.status_code == 200
+        and "YourGov Source Lens" in visible
+        and "MyGov Lens POC" not in visible
+        and "MyGov Lens POC" not in body,
+        "YourGov primary product present and old POC title absent",
+    )
+    v.check(
+        "source dropdown",
+        'id="source-view-select"' in body
+        and 'value="yourgov-summary"' in body
+        and 'value="publicwhip-record"' in body
+        and "PublicWhip" in visible,
+        "YourGov Summary and PublicWhip Record options available",
+    )
+    v.check(
+        "source-lens map frame",
+        'id="map-frame"' in body and 'src="/map/relay"' in body,
+        "map iframe contract present",
+    )
+    v.check(
+        "source dropdown PublicWhip contract",
+        re.search(
+            r"<option[^>]+value=[\"']publicwhip-record[\"'][^>]*>\s*PublicWhip Record\s*</option>",
+            body,
+            re.IGNORECASE,
+        )
+        is not None,
+        "PublicWhip Record is selectable through source dropdown",
+    )
+
+
+def check_source_divisions(v: Validation, client) -> None:
+    response, payload = _json_response(client, "/api/lens/source-divisions")
+    divisions = payload.get("divisions") if isinstance(payload, dict) else None
+    v.check(
+        "source divisions",
+        response.status_code == 200 and isinstance(divisions, list) and len(divisions) > 0,
+        f"status {response.status_code}, count {len(divisions or [])}",
+    )
+
+
+def _payload_division_id(payload: dict) -> int | None:
+    division = payload.get("division")
+    if isinstance(division, dict) and division.get("division_id") is not None:
+        return int(division["division_id"])
+    if payload.get("division_id") is not None:
+        return int(payload["division_id"])
+    return None
+
+
+def _items_have_selected_context(payload: dict) -> bool:
+    division = payload.get("division") or {}
+    title = str(division.get("title") or payload.get("title") or "")
+    map_data = payload.get("map_data") or {}
+    if not title or not map_data:
+        return False
+    for item in map_data.values():
+        label = str(item.get("label") or "")
+        vote_context = str(item.get("division_vote") or item.get("vote") or "")
+        if title not in label:
+            return False
+        if vote_context and vote_context not in label:
+            return False
+    return True
+
+
+def check_payloads(v: Validation, client, division_id: int) -> None:
+    selected_ids: set[int] = set()
+    payloads: dict[str, dict] = {}
+
+    for mode in MAP_MODES:
+        response, payload = _json_response(
+            client,
+            f"/api/lens/division/{division_id}/map?mode={mode}",
+        )
+        payload = payload if isinstance(payload, dict) else {}
+        map_data = payload.get("map_data")
+        selected_id = _payload_division_id(payload)
+        if selected_id is not None:
+            selected_ids.add(selected_id)
+        payloads[mode] = payload
+
+        v.check(
+            f"division map payload {mode}",
+            response.status_code == 200
+            and payload.get("ok") is True
+            and selected_id == division_id
+            and isinstance(map_data, dict)
+            and len(map_data) > 0,
+            (
+                f"status {response.status_code}, selected division {selected_id}, "
+                f"map rows {len(map_data or {})}"
+            ),
+        )
+
+    v.check(
+        "division map selected division consistency",
+        selected_ids == {division_id},
+        f"selected ids {sorted(selected_ids)}",
+    )
+
+    for mode in ("party-split", "gender-split", "rebel-split"):
+        v.check(
+            f"division label context {mode}",
+            _items_have_selected_context(payloads.get(mode, {})),
+            "labels include selected division title and vote context",
+        )
+
+    source_links_ok = all(
+        isinstance(payload.get("source_links"), list)
+        and any(link.get("url") for link in payload.get("source_links", []) if isinstance(link, dict))
+        for payload in payloads.values()
+    )
+    v.check(
+        "division source links",
+        source_links_ok,
+        "source_links present for selected division payloads",
+    )
+
+
+def check_global_feasibility(v: Validation) -> None:
+    data_path = ROOT / "static" / "data" / "global_feasibility.json"
+    data = json.loads(data_path.read_text(encoding="utf-8"))
+    countries = data.get("countries") if isinstance(data, dict) else None
+    countries = countries if isinstance(countries, list) else []
+
+    v.check(
+        "global feasibility country count",
+        len(countries) >= 190,
+        f"{len(countries)} countries",
+    )
+
+    iso2_values = [
+        str(country.get("iso2") or "").upper()
+        for country in countries
+        if isinstance(country, dict) and country.get("iso2")
+    ]
+    duplicates = sorted(
+        iso2 for iso2 in set(iso2_values) if iso2_values.count(iso2) > 1
+    )
+    v.check(
+        "global feasibility ISO2 uniqueness",
+        len(duplicates) == 0 and len(iso2_values) == len(countries),
+        f"duplicates {duplicates or 'none'}",
+    )
+
+    gb = next(
+        (
+            country
+            for country in countries
+            if isinstance(country, dict) and str(country.get("iso2", "")).upper() == "GB"
+        ),
+        None,
+    )
+    v.check(
+        "global feasibility UK adapter",
+        isinstance(gb, dict) and gb.get("working_adapter") is True,
+        "GB working_adapter true",
+    )
+
+
+def check_branding(v: Validation, client) -> None:
+    for route in CORE_ROUTES:
+        response = client.get(route)
+        visible = _visible_text(response.get_data(as_text=True))
+        v.check(
+            f"public branding {route}",
+            response.status_code in {200, 301, 302}
+            and "MyGov" not in visible
+            and "YourGov" in visible,
+            "visible copy uses YourGov and avoids old MyGov public copy",
+        )
+
+
+def _extract_remote_division_id(row: dict) -> int | None:
+    for key in ("DivisionId", "divisionId", "division_id"):
+        value = row.get(key)
+        if value is not None:
+            return int(value)
+    return None
+
+
+def check_network_freshness(v: Validation, local_latest_id: int, skip: bool) -> None:
+    if skip:
+        v.pass_("network freshness skipped", "skip flag supplied")
+        return
+
+    try:
+        response = httpx.get(
+            COMMONS_VOTES_LATEST_URL,
+            params={"take": 1},
+            headers={"User-Agent": "YourGov production validation"},
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        rows = payload if isinstance(payload, list) else payload.get("items", [])
+        if not rows:
+            v.fail("network freshness", "Commons Votes API returned no divisions")
+            return
+        remote_latest_id = _extract_remote_division_id(rows[0])
+        if remote_latest_id is None:
+            v.fail(
+                "network freshness",
+                f"Commons Votes API payload missing DivisionId: {rows[0]}",
+            )
+            return
+    except Exception as exc:
+        v.fail("network freshness", f"Commons Votes API request failed: {exc}")
+        return
+
+    trail = remote_latest_id - local_latest_id
+    v.check(
+        "network freshness",
+        trail <= FRESHNESS_THRESHOLD_DIVISIONS,
+        (
+            f"local latest {local_latest_id}, upstream latest {remote_latest_id}, "
+            f"trail {trail}, threshold {FRESHNESS_THRESHOLD_DIVISIONS}"
+        ),
+    )
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Validate local YourGov production readiness contracts.",
+    )
+    parser.add_argument(
+        "--division-id",
+        type=int,
+        default=None,
+        help="Division id to validate. Defaults to the latest local division.",
+    )
+    parser.add_argument(
+        "--skip-network-freshness",
+        action="store_true",
+        help="Skip the optional Commons Votes API freshness check.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv or sys.argv[1:])
+    v = Validation()
+    client = _client()
+
+    try:
+        local_latest_id = latest_local_division_id()
+        v.pass_("latest local division", str(local_latest_id))
+    except Exception as exc:
+        v.fail("latest local division", str(exc))
+        local_latest_id = args.division_id
+
+    division_id = args.division_id or local_latest_id
+    if division_id is None:
+        v.fail("division id", "No --division-id supplied and local latest lookup failed.")
+        return v.finish()
+
+    check_routes(v, client)
+    check_source_lens(v, client)
+    check_source_divisions(v, client)
+    check_payloads(v, client, int(division_id))
+    check_global_feasibility(v)
+    check_branding(v, client)
+    check_network_freshness(v, int(local_latest_id or division_id), args.skip_network_freshness)
+
+    return v.finish()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

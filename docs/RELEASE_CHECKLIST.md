@@ -10,6 +10,14 @@ Anything failing here either gets fixed or gets demoed around — see
 
 ## Pre-flight (off-camera)
 
+- [ ] Run the local production contract validator:
+
+```bash
+python scripts/validate_production_ready.py --skip-network-freshness --division-id 2355
+```
+
+Before release, run it again without `--skip-network-freshness` when the
+Commons Votes API is reachable so data freshness is checked against upstream.
 - [ ] Open https://mygov-hackathon.vercel.app/source-lens in a fresh
       private/incognito window so the onboarding tour fires.
 - [ ] Window sized **≥ 1400×900**. Phone/tablet flow is separately
