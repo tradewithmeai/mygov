@@ -146,3 +146,10 @@ def test_public_text_files_do_not_contain_visible_mygov_copy():
                 violations.append(f"{rel_path}:{line_no}: {line.strip()}")
 
     assert violations == []
+
+
+def test_ios_release_workflow_uses_yourgov_scheme():
+    workflow = (ROOT / ".github" / "workflows" / "ios-release.yml").read_text(encoding="utf-8")
+
+    assert not re.search(r"(?m)^\s*SCHEME:\s*MyGov\s*$", workflow)
+    assert re.search(r"(?m)^\s*SCHEME:\s*YourGov\s*$", workflow)
