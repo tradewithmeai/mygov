@@ -1543,6 +1543,7 @@
     }
 
     function updateIndicators() {
+      if (!document.body) return;
       var explainOn = document.body.classList.contains('explain-mode-on');
       setActionOn('explain', explainOn);
       if (explainLabelEl) explainLabelEl.textContent = explainOn ? explainLabelOn : explainLabelOff;
@@ -1550,8 +1551,10 @@
     updateIndicators();
 
     // Watch body class flips driven by Explain Mode
-    var bodyObserver = new MutationObserver(updateIndicators);
-    bodyObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    if (document.body) {
+      var bodyObserver = new MutationObserver(updateIndicators);
+      bodyObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
   })();
   // ── end service menu ─────────────────────────────────────────
 
@@ -2150,13 +2153,16 @@
     // Mirror Explain-Mode on/off state onto the toolbar button so the
     // user always knows whether Explain is active.
     function syncExplainState() {
+      if (!document.body) return;
       var on = document.body.classList.contains('explain-mode-on');
       var btn = toolbar.querySelector('.mob-btn[data-mobile-action="explain"]');
       if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
     syncExplainState();
-    new MutationObserver(syncExplainState).observe(
-      document.body, { attributes: true, attributeFilter: ['class'] }
-    );
+    if (document.body) {
+      new MutationObserver(syncExplainState).observe(
+        document.body, { attributes: true, attributeFilter: ['class'] }
+      );
+    }
   })();
 })();

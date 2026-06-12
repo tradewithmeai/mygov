@@ -164,6 +164,37 @@ def test_panel_js_uses_selected_division_map_endpoint():
     assert "ensurePublicWhipLoaded();" not in js
 
 
+def test_map_relay_promap_bundle_observes_dom_node_for_modulepreload():
+    response = _client().get("/map/relay")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    script = re.search(
+        r'<script[^>]+src="([^"]*static/promap/assets/index-[^"]+\.js(?:\?v=\d+)?)"',
+        html,
+    )
+    assert script, "map relay Promap script not found"
+
+    bundle = _static_text(script.group(1))
+
+    assert ".observe(document,{childList" not in bundle
+    assert ".observe(document.documentElement||document.body" in bundle
+
+
+def test_map_relay_promap_assets_are_cache_busted():
+    response = _client().get("/map/relay")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+
+    script = re.search(r'src="([^"]*/static/promap/assets/(index-[^"]+\.js))\?v=(\d+)"', html)
+    stylesheet = re.search(r'href="([^"]*/static/promap/assets/(index-[^"]+\.css))\?v=(\d+)"', html)
+    assert script
+    assert stylesheet
+    assert script.group(3) == str((ROOT / "static" / "promap" / "assets" / script.group(2)).stat().st_mtime_ns)
+    assert stylesheet.group(3) == str(
+        (ROOT / "static" / "promap" / "assets" / stylesheet.group(2)).stat().st_mtime_ns
+    )
+
+
 def test_publicwhip_record_loads_only_from_source_view_flow():
     js = _panel_js()
 
@@ -207,6 +238,16 @@ def test_map_payload_loads_use_request_sequence_guards():
     )
 
 
+def test_service_menu_body_observer_is_guarded():
+    js = _panel_js()
+
+    assert re.search(
+        r"if\s*\(\s*document\.body\s*\)\s*\{[\s\S]*?"
+        r"bodyObserver\.observe\(\s*document\.body",
+        js,
+    )
+
+
 def test_publicwhip_dropdown_without_division_stays_on_visible_summary_warning():
     js = _panel_js()
     update_source_view = _function_body(js, "updateSourceView")
@@ -238,6 +279,17 @@ def test_mobile_toolbar_scrolls_to_stacked_sections():
     assert "#visualisation-panel" in mobile_toolbar or ".map-pane" in mobile_toolbar
 
 
+def test_mobile_toolbar_body_observer_is_guarded():
+    js = _panel_js()
+    mobile_toolbar = _function_body(js, "setupMobileToolbar")
+
+    assert re.search(
+        r"if\s*\(\s*document\.body\s*\)\s*\{[\s\S]*?"
+        r"new\s+MutationObserver\(syncExplainState\)\.observe\(\s*document\.body",
+        mobile_toolbar,
+    )
+
+
 def test_mobile_css_stacks_source_above_map_without_default_hiding():
     css = _panel_css()
 
@@ -257,6 +309,28 @@ def test_mobile_css_stacks_source_above_map_without_default_hiding():
     assert ".map-pane:not(.active)" not in css
     assert 'body[data-mobile-view="source"] .map-pane' not in css
     assert 'body[data-mobile-view="map"]    .source-pane' not in css
+
+
+def test_desktop_css_locks_split_view_to_viewport():
+    css = _panel_css()
+
+    assert re.search(
+        r"@media\s*\(min-width:\s*921px\)[\s\S]*?\.lens-poc\.app-shell\s*\{"
+        r"[\s\S]*?height:\s*100vh"
+        r"[\s\S]*?overflow:\s*hidden",
+        css,
+    )
+    assert re.search(
+        r"@media\s*\(min-width:\s*921px\)[\s\S]*?\.lens-poc\.app-shell\s*>\s*\.map-pane"
+        r"[\s\S]*?\.lens-poc\.app-shell\s*>\s*\.source-pane\s*\{"
+        r"[\s\S]*?height:\s*100%",
+        css,
+    )
+    assert re.search(
+        r"@media\s*\(min-width:\s*921px\)[\s\S]*?\.lens-poc\.app-shell\s*>\s*\.map-pane\s*>\s*\.map-wrap\s*\{"
+        r"[\s\S]*?height:\s*100%",
+        css,
+    )
 
 
 def test_yourgov_static_svg_assets_are_served():

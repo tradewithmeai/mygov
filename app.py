@@ -2055,8 +2055,8 @@ def api_lens_recognise_url():
 @app.route("/map/relay")
 def map_relay():
     assets_dir = os.path.join(app.root_path, "static", "promap", "assets")
-    js_asset = "/static/promap/assets/index-uJtvkwRy.js"
-    css_asset = "/static/promap/assets/index-CvBPfDPn.css"
+    js_asset_name = "index-uJtvkwRy.js"
+    css_asset_name = "index-CvBPfDPn.css"
     try:
         js_candidates = sorted(
             [f for f in os.listdir(assets_dir) if f.startswith("index-") and f.endswith(".js")],
@@ -2069,11 +2069,22 @@ def map_relay():
             reverse=True,
         )
         if js_candidates:
-            js_asset = f"/static/promap/assets/{js_candidates[0]}"
+            js_asset_name = js_candidates[0]
         if css_candidates:
-            css_asset = f"/static/promap/assets/{css_candidates[0]}"
+            css_asset_name = css_candidates[0]
     except OSError:
         pass
+
+    def versioned_promap_asset(filename):
+        asset_url = f"/static/promap/assets/{filename}"
+        try:
+            version = os.stat(os.path.join(assets_dir, filename)).st_mtime_ns
+        except OSError:
+            return asset_url
+        return f"{asset_url}?v={version}"
+
+    js_asset = versioned_promap_asset(js_asset_name)
+    css_asset = versioned_promap_asset(css_asset_name)
     return render_template("map_relay.html", promap_js=js_asset, promap_css=css_asset)
 
 

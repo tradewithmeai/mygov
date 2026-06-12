@@ -3012,6 +3012,33 @@ html[dir="rtl"] .lens-poc > .source-pane {
 }
 
 /* YourGov Source Lens shell */
+@media (min-width: 921px) {
+  .lens-poc.app-shell {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  .lens-poc.app-shell > .map-pane,
+  .lens-poc.app-shell > .source-pane {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .lens-poc.app-shell > .map-pane {
+    overflow: hidden;
+  }
+
+  .lens-poc.app-shell > .source-pane {
+    overflow-y: auto;
+  }
+
+  .lens-poc.app-shell > .map-pane > .map-wrap {
+    height: 100%;
+    min-height: 0;
+  }
+}
+
 .yourgov-panel {
   overflow-y: auto;
   gap: 12px;
