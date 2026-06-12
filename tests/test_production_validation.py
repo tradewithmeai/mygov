@@ -42,6 +42,8 @@ class _FakeMapClient:
 def _valid_map_payload(mode, division_id=2355):
     title = "Selected Division Title"
     division_vote = "Aye"
+    constituency = "Example Constituency"
+    color = "#0087dc"
     return {
         "ok": True,
         "mode": mode,
@@ -60,14 +62,27 @@ def _valid_map_payload(mode, division_id=2355):
                 "url": f"/publicwhip/division/{division_id}",
             },
         ],
+        "legend": [
+            {
+                "key": division_vote,
+                "label": division_vote,
+                "color": color,
+            },
+        ],
         "map_data": {
-            "representative-row": {
+            constituency: {
                 "mode": mode,
                 "division_vote": division_vote,
                 "vote": division_vote,
                 "category": "Labour",
-                "legend_key": "aye",
+                "legend_key": division_vote,
+                "color": color,
                 "label": f"{title} - {division_vote} - example member",
+                "constituency": constituency,
+                "member_id": 123,
+                "name": "Example Member",
+                "party": "Labour",
+                "source": "PublicWhip",
             },
         },
     }
@@ -138,6 +153,32 @@ def test_main_records_unexpected_check_exceptions_as_failures(monkeypatch, capsy
     assert "VALIDATION FAIL" in captured.out
 
 
+def test_main_empty_argv_does_not_read_sys_argv(monkeypatch, capsys):
+    def noop_check(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(sys, "argv", ["validate_production_ready.py", "--pytest-leaked-arg"])
+    monkeypatch.setattr(validation_script, "_client", lambda: object())
+    monkeypatch.setattr(validation_script, "latest_local_division_id", lambda: 2355)
+    monkeypatch.setattr(validation_script, "check_routes", noop_check)
+    monkeypatch.setattr(validation_script, "check_source_lens", noop_check)
+    monkeypatch.setattr(validation_script, "check_source_divisions", noop_check)
+    monkeypatch.setattr(validation_script, "check_payloads", noop_check)
+    monkeypatch.setattr(validation_script, "check_global_feasibility", noop_check)
+    monkeypatch.setattr(validation_script, "check_branding", noop_check)
+    monkeypatch.setattr(validation_script, "check_network_freshness", noop_check)
+
+    try:
+        result = validation_script.main([])
+    except SystemExit as exc:
+        pytest.fail(f"main([]) inspected sys.argv and exited: {exc}")
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "PASS latest local division" in captured.out
+    assert "VALIDATION PASS" in captured.out
+
+
 def test_check_payloads_requires_publicwhip_source_link_for_selected_division():
     payloads = _valid_payloads()
     for payload in payloads.values():
@@ -170,16 +211,40 @@ def test_check_payloads_requires_mode_and_division_scoped_quality():
     )
 
 
+def test_validate_map_rows_checks_every_map_data_row():
+    payloads = _valid_payloads()
+    payload = payloads["vote-split"]
+    valid_row = next(iter(payload["map_data"].values()))
+    payload["map_data"]["Second Constituency"] = {
+        **valid_row,
+        "constituency": "Second Constituency",
+        "mode": "party-split",
+        "division_vote": "Maybe",
+    }
+    validation = validation_script.Validation()
+
+    validation_script._validate_map_rows(validation, payload, "vote-split", 2355)
+
+    assert any(
+        "division map rows vote-split" in failure
+        and "Second Constituency" in failure
+        and "mode" in failure
+        and "division_vote" in failure
+        for failure in validation.failures
+    )
+
+
 def test_check_payloads_requires_representative_row_contract():
     payloads = _valid_payloads()
-    payloads["vote-split"]["map_data"]["representative-row"].pop("legend_key")
-    payloads["vote-split"]["map_data"]["representative-row"]["division_vote"] = "Maybe"
+    row = next(iter(payloads["vote-split"]["map_data"].values()))
+    row.pop("legend_key")
+    row["division_vote"] = "Maybe"
     validation = validation_script.Validation()
 
     validation_script.check_payloads(validation, _FakeMapClient(payloads), 2355)
 
     assert any(
-        "division map representative row vote-split" in failure
+        "division map rows vote-split" in failure
         and "legend_key" in failure
         and "division_vote" in failure
         for failure in validation.failures

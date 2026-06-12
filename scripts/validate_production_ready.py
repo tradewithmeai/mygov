@@ -33,6 +33,18 @@ MAP_MODES = (
     "rebel-split",
 )
 VALID_DIVISION_VOTES = {"Aye", "No", "Absent/unknown"}
+REQUIRED_MAP_ROW_KEYS = (
+    "vote",
+    "category",
+    "legend_key",
+    "color",
+    "label",
+    "constituency",
+    "member_id",
+    "name",
+    "party",
+    "source",
+)
 
 COMMONS_VOTES_LATEST_URL = (
     "https://commonsvotes-api.parliament.uk/data/divisions.json/search"
@@ -267,7 +279,33 @@ def _source_link_errors(payload: dict, division_id: int) -> list[str]:
     return []
 
 
-def _representative_row_errors(
+def _legend_contract(payload: dict) -> tuple[bool, set, dict, list[str]]:
+    if "legend" not in payload or payload.get("legend") is None:
+        return False, set(), {}, []
+
+    legend = payload.get("legend")
+    if not isinstance(legend, list):
+        return True, set(), {}, ["legend is not a list"]
+
+    keys = set()
+    colours = {}
+    errors: list[str] = []
+    for index, entry in enumerate(legend):
+        if not isinstance(entry, dict):
+            errors.append(f"legend entry {index} is not an object")
+            continue
+        key = entry.get("key")
+        if key in (None, ""):
+            errors.append(f"legend entry {index} key missing")
+            continue
+        keys.add(key)
+        color = entry.get("color")
+        if color not in (None, ""):
+            colours[key] = color
+    return True, keys, colours, errors
+
+
+def _map_row_errors(
     payload: dict,
     mode: str,
     division_id: int,
@@ -277,35 +315,80 @@ def _representative_row_errors(
     if not isinstance(map_data, dict) or not map_data:
         return ["map_data missing or empty"]
 
-    row_key, row = next(iter(map_data.items()))
-    if not isinstance(row, dict):
-        return [f"representative row {row_key!r} is not an object"]
+    legend_present, legend_keys, legend_colours, legend_errors = _legend_contract(payload)
+    payload_division = payload.get("division")
+    division = payload_division if isinstance(payload_division, dict) else {}
+    title = str(division.get("title") or payload.get("title") or "")
 
-    if row.get("mode") != mode:
-        errors.append(f"mode {row.get('mode')!r} expected {mode!r}")
+    for row_key, row in map_data.items():
+        row_label = str(row_key)
+        if not isinstance(row, dict):
+            errors.append(f"{row_label}: row is not an object")
+            continue
 
-    division_vote = row.get("division_vote")
-    if division_vote not in VALID_DIVISION_VOTES:
-        errors.append(
-            f"division_vote {division_vote!r} expected one of "
-            f"{sorted(VALID_DIVISION_VOTES)}"
-        )
+        row_errors: list[str] = []
+        if row.get("mode") != mode:
+            row_errors.append(f"mode {row.get('mode')!r} expected {mode!r}")
 
-    for required_key in ("vote", "category", "legend_key"):
-        if row.get(required_key) in (None, ""):
-            errors.append(f"{required_key} missing")
+        division_vote = row.get("division_vote")
+        if division_vote not in VALID_DIVISION_VOTES:
+            row_errors.append(
+                f"division_vote {division_vote!r} expected one of "
+                f"{sorted(VALID_DIVISION_VOTES)}"
+            )
 
-    if mode != "vote-split":
-        payload_division = payload.get("division")
-        division = payload_division if isinstance(payload_division, dict) else {}
-        title = str(division.get("title") or payload.get("title") or "")
+        for required_key in REQUIRED_MAP_ROW_KEYS:
+            if row.get(required_key) in (None, ""):
+                row_errors.append(f"{required_key} missing")
+
+        legend_key = row.get("legend_key")
+        if legend_present:
+            row_errors.extend(legend_errors)
+            if legend_key not in legend_keys:
+                row_errors.append(f"legend_key {legend_key!r} missing from payload legend")
+            expected_color = legend_colours.get(legend_key)
+            if expected_color is not None and row.get("color") != expected_color:
+                row_errors.append(
+                    f"color {row.get('color')!r} expected {expected_color!r} "
+                    f"for legend_key {legend_key!r}"
+                )
+
+        constituency = row.get("constituency")
+        if isinstance(row_key, str) and row_key.strip():
+            if constituency != row_key:
+                row_errors.append(
+                    f"constituency {constituency!r} expected map key {row_key!r}"
+                )
+        elif constituency in (None, ""):
+            row_errors.append("constituency missing")
+
         label = str(row.get("label") or "")
-        if not title:
-            errors.append(f"selected division title missing for {division_id}")
-        elif title not in label:
-            errors.append(f"label missing selected division title {title!r}")
+        if mode != "vote-split":
+            if not title:
+                row_errors.append(f"selected division title missing for {division_id}")
+            elif title not in label:
+                row_errors.append(f"label missing selected division title {title!r}")
+            if division_vote and str(division_vote) not in label:
+                row_errors.append(f"label missing division_vote {division_vote!r}")
+
+        if row_errors:
+            errors.append(f"{row_label}: {', '.join(row_errors)}")
 
     return errors
+
+
+def _validate_map_rows(
+    v: Validation,
+    payload: dict,
+    mode: str,
+    division_id: int,
+) -> bool:
+    errors = _map_row_errors(payload, mode, division_id)
+    if errors:
+        v.fail(f"division map rows {mode}", _format_errors(errors))
+        return False
+    v.pass_(f"division map rows {mode}", "ok")
+    return True
 
 
 def check_payloads(v: Validation, client, division_id: int) -> None:
@@ -350,16 +433,7 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
             _format_errors(source_link_errors),
         )
 
-        representative_row_errors = _representative_row_errors(
-            payload,
-            mode,
-            division_id,
-        )
-        v.check(
-            f"division map representative row {mode}",
-            not representative_row_errors,
-            _format_errors(representative_row_errors),
-        )
+        _validate_map_rows(v, payload, mode, division_id)
 
     v.check(
         "division map selected division consistency",
@@ -523,7 +597,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv or sys.argv[1:])
+    args = parse_args(sys.argv[1:] if argv is None else argv)
     v = Validation()
     client = _client()
 
