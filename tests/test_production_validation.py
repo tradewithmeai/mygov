@@ -51,6 +51,7 @@ def _valid_map_payload(mode, division_id=2355):
         "data_quality": {
             "division_scoped": True,
             "selected_division_id": division_id,
+            "mapped_member_rows": 1,
         },
         "division": {
             "division_id": division_id,
@@ -247,5 +248,40 @@ def test_check_payloads_requires_representative_row_contract():
         "division map rows vote-split" in failure
         and "legend_key" in failure
         and "division_vote" in failure
+        for failure in validation.failures
+    )
+
+
+def test_check_payloads_requires_consistent_constituency_set_across_modes():
+    payloads = _valid_payloads()
+    row = next(iter(payloads["party-split"]["map_data"].values()))
+    payloads["party-split"]["map_data"] = {
+        "Different Constituency": {
+            **row,
+            "constituency": "Different Constituency",
+            "label": "Selected Division Title - Aye - different member",
+        }
+    }
+    validation = validation_script.Validation()
+
+    validation_script.check_payloads(validation, _FakeMapClient(payloads), 2355)
+
+    assert any(
+        "division map constituency consistency" in failure
+        and "party-split" in failure
+        for failure in validation.failures
+    )
+
+
+def test_check_payloads_requires_mapped_member_rows_to_match_map_data():
+    payloads = _valid_payloads()
+    payloads["gender-split"]["data_quality"]["mapped_member_rows"] = 999
+    validation = validation_script.Validation()
+
+    validation_script.check_payloads(validation, _FakeMapClient(payloads), 2355)
+
+    assert any(
+        "division map row count gender-split" in failure
+        and "999" in failure
         for failure in validation.failures
     )

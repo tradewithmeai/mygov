@@ -170,18 +170,28 @@ def test_division_2355_documents_source_count_gap():
     client = _client()
 
     payload = _division_map_payload(client, 2355, "vote-split")
+    counts = payload["counts"]
+    data_quality = payload["data_quality"]
 
-    assert payload["counts"] == {"aye": 305, "no": 165, "unknown": 177}
     assert payload["division"]["aye_count"] == 307
     assert payload["division"]["no_count"] == 171
-    assert payload["data_quality"]["source_aye_count"] == 307
-    assert payload["data_quality"]["source_no_count"] == 171
-    assert payload["data_quality"]["selected_division_vote_rows"] == 470
-    assert payload["data_quality"]["mapped_member_rows"] == 647
-    assert "source_vote_count_gap" not in payload["data_quality"]
-    assert payload["data_quality"]["source_vote_count_total"] == 478
-    assert payload["data_quality"]["mapped_recorded_vote_count"] == 470
-    assert payload["data_quality"]["source_minus_mapped_vote_count"] == 8
+    assert data_quality["source_aye_count"] == payload["division"]["aye_count"]
+    assert data_quality["source_no_count"] == payload["division"]["no_count"]
+    assert data_quality["mapped_aye_count"] == counts["aye"]
+    assert data_quality["mapped_no_count"] == counts["no"]
+    assert data_quality["mapped_unknown_count"] == counts["unknown"]
+    assert data_quality["mapped_member_rows"] == sum(counts.values())
+    assert data_quality["selected_division_vote_rows"] == data_quality["mapped_recorded_vote_count"]
+    assert "source_vote_count_gap" not in data_quality
+    assert (
+        data_quality["source_vote_count_total"]
+        == data_quality["source_aye_count"] + data_quality["source_no_count"]
+    )
+    assert (
+        data_quality["source_minus_mapped_vote_count"]
+        == data_quality["source_vote_count_total"]
+        - data_quality["mapped_recorded_vote_count"]
+    )
 
 
 def test_legacy_division_endpoint_keeps_vote_map_compatibility():

@@ -340,7 +340,11 @@ def index():
 
         conn = get_conn()
         rows = conn.execute(
-            "SELECT member_id, name, party, constituency FROM members"
+            """
+            SELECT member_id, name, party, constituency
+            FROM members
+            WHERE constituency IS NOT NULL
+            """
         ).fetchall()
         conn.close()
 
@@ -364,7 +368,11 @@ def mp_search_api():
 
     conn = get_conn()
     rows = conn.execute(
-        "SELECT member_id, name, party, constituency FROM members"
+        """
+        SELECT member_id, name, party, constituency
+        FROM members
+        WHERE constituency IS NOT NULL
+        """
     ).fetchall()
     conn.close()
 
@@ -1187,7 +1195,8 @@ def pw_mps():
             """
             SELECT member_id, name, party, constituency
             FROM members
-            WHERE name LIKE ? OR constituency LIKE ? OR party LIKE ?
+            WHERE constituency IS NOT NULL
+              AND (name LIKE ? OR constituency LIKE ? OR party LIKE ?)
             ORDER BY name
             LIMIT 200
             """,
@@ -1198,6 +1207,7 @@ def pw_mps():
             """
             SELECT member_id, name, party, constituency
             FROM members
+            WHERE constituency IS NOT NULL
             ORDER BY name
             LIMIT 200
             """
@@ -1366,7 +1376,8 @@ def pw_search():
             """
             SELECT member_id, name, party, constituency
             FROM members
-            WHERE name LIKE ? OR constituency LIKE ? OR party LIKE ?
+            WHERE constituency IS NOT NULL
+              AND (name LIKE ? OR constituency LIKE ? OR party LIKE ?)
             ORDER BY name LIMIT 30
             """,
             (like, like, like),
@@ -2463,7 +2474,8 @@ def agent_search_mps():
         """
         SELECT member_id, name, party, constituency
         FROM members
-        WHERE name LIKE ? OR party LIKE ? OR constituency LIKE ?
+        WHERE constituency IS NOT NULL
+          AND (name LIKE ? OR party LIKE ? OR constituency LIKE ?)
         ORDER BY name
         LIMIT ?
         """,

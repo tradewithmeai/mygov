@@ -33,5 +33,6 @@ The deployment bundle writes `tmp/restart.txt`. Passenger uses this file to relo
 
 - The app uses the bundled `mygov.db` seed.
 - On Linux, writable DB state is copied to `/tmp/mygov.db`.
+- The bundled seed is refreshed by the GitHub `YourGov Data Refresh` workflow at 03:00 UTC daily. Validation runs 15 minutes after the refresh before the workflow commits the updated seed.
 - Set `MYGOV_AGENT_API_TOKEN` in cPanel environment variables if the agent API should be enabled.
 - Leave `OPENAI_API_KEY` unset for cost-free deterministic explainer fallback.

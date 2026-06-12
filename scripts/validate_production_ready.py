@@ -49,7 +49,7 @@ REQUIRED_MAP_ROW_KEYS = (
 COMMONS_VOTES_LATEST_URL = (
     "https://commonsvotes-api.parliament.uk/data/divisions.json/search"
 )
-FRESHNESS_THRESHOLD_DIVISIONS = 5
+FRESHNESS_THRESHOLD_DIVISIONS = 0
 
 
 class Validation:
@@ -394,6 +394,7 @@ def _validate_map_rows(
 def check_payloads(v: Validation, client, division_id: int) -> None:
     selected_ids: set[int] = set()
     payloads: dict[str, dict] = {}
+    constituency_sets: dict[str, set[str]] = {}
 
     for mode in MAP_MODES:
         response, payload = _json_response(
@@ -406,6 +407,8 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
         if selected_id is not None:
             selected_ids.add(selected_id)
         payloads[mode] = payload
+        if isinstance(map_data, dict):
+            constituency_sets[mode] = set(str(key) for key in map_data.keys())
 
         v.check(
             f"division map payload {mode}",
@@ -426,6 +429,19 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
             _format_errors(metadata_errors),
         )
 
+        data_quality = payload.get("data_quality")
+        mapped_member_rows = (
+            _safe_int(data_quality.get("mapped_member_rows"))
+            if isinstance(data_quality, dict)
+            else None
+        )
+        actual_map_rows = len(map_data) if isinstance(map_data, dict) else None
+        v.check(
+            f"division map row count {mode}",
+            mapped_member_rows == actual_map_rows and actual_map_rows is not None,
+            f"mapped_member_rows {mapped_member_rows}, map rows {actual_map_rows}",
+        )
+
         source_link_errors = _source_link_errors(payload, division_id)
         v.check(
             f"division source links {mode}",
@@ -440,6 +456,20 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
         selected_ids == {division_id},
         f"selected ids {sorted(selected_ids)}",
     )
+
+    if constituency_sets:
+        reference_mode = MAP_MODES[0]
+        reference = constituency_sets.get(reference_mode, set())
+        mismatched_modes = [
+            mode
+            for mode in MAP_MODES
+            if constituency_sets.get(mode, set()) != reference
+        ]
+        v.check(
+            "division map constituency consistency",
+            not mismatched_modes,
+            f"mismatched modes {mismatched_modes or 'none'}",
+        )
 
     for mode in ("party-split", "gender-split", "rebel-split"):
         v.check(
@@ -456,6 +486,50 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
         "division source links",
         source_links_ok,
         f"source_links include /publicwhip/division/{division_id}",
+    )
+
+
+def check_local_data_coverage(v: Validation, division_id: int) -> None:
+    conn = get_publicwhip_conn()
+    try:
+        member_row = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS current_members,
+                COUNT(DISTINCT constituency) AS constituencies
+            FROM members
+            WHERE constituency IS NOT NULL
+            """
+        ).fetchone()
+        vote_row = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS vote_rows,
+                SUM(CASE WHEN voted_aye = 1 THEN 1 ELSE 0 END) AS ayes,
+                SUM(CASE WHEN voted_aye = 0 THEN 1 ELSE 0 END) AS noes
+            FROM votes
+            WHERE division_id = ?
+            """,
+            (division_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    current_members = int(member_row["current_members"] or 0)
+    constituencies = int(member_row["constituencies"] or 0)
+    v.check(
+        "current Commons member coverage",
+        600 <= current_members <= 700 and constituencies == current_members,
+        f"{current_members} members, {constituencies} unique constituencies",
+    )
+
+    vote_rows = int(vote_row["vote_rows"] or 0)
+    ayes = int(vote_row["ayes"] or 0)
+    noes = int(vote_row["noes"] or 0)
+    v.check(
+        "selected division local vote coverage",
+        vote_rows > 0 and ayes > 0 and noes > 0,
+        f"{vote_rows} vote rows, {ayes} ayes, {noes} noes",
     )
 
 
@@ -617,6 +691,7 @@ def main(argv: list[str] | None = None) -> int:
         check_routes(v, client)
         check_source_lens(v, client)
         check_source_divisions(v, client)
+        check_local_data_coverage(v, int(division_id))
         check_payloads(v, client, int(division_id))
         check_global_feasibility(v)
         check_branding(v, client)

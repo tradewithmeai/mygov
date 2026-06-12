@@ -1,0 +1,58 @@
+name: YourGov Data Refresh
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron is UTC. 03:00 UTC is safely out of normal Parliament hours.
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yourgov-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  update-and-validate:
+    name: Update records and validate data
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Update parliamentary records
+        run: python scripts/update_publicwhip_data.py --db-path mygov.db --latest-take 80
+
+      - name: Wait 15 minutes before GitHub data validation
+        run: sleep 900
+
+      - name: Validate refreshed production data
+        run: python scripts/validate_production_ready.py
+
+      - name: Commit refreshed seed database
+        shell: bash
+        run: |
+          if git diff --quiet -- mygov.db; then
+            echo "No mygov.db changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mygov.db
+          git commit -m "chore: refresh parliamentary data"
+          git push

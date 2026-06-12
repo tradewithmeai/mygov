@@ -29,12 +29,32 @@ def test_publicwhip_mp_shows_total_vote_count():
     appmod = _appmod()
     appmod.app.config["TESTING"] = True
     client = appmod.app.test_client()
+    conn = appmod.get_publicwhip_conn()
+    try:
+        total_votes = conn.execute(
+            "SELECT COUNT(*) FROM votes WHERE member_id = ?",
+            (5362,),
+        ).fetchone()[0]
+    finally:
+        conn.close()
 
     r = client.get("/publicwhip/mp/5362")
     assert r.status_code == 200
     body = r.get_data(as_text=True)
-    assert "250" in body
-    assert "Showing the latest 100 of 250 recorded votes." in body
+    assert f">{total_votes}<" in body
+    assert f"Showing the latest 100 of {total_votes} recorded votes." in body
+
+
+def test_publicwhip_mps_lists_only_current_constituency_members():
+    appmod = _appmod()
+    appmod.app.config["TESTING"] = True
+    client = appmod.app.test_client()
+
+    r = client.get("/publicwhip/mps")
+
+    assert r.status_code == 200
+    body = r.get_data(as_text=True)
+    assert "<td class=\"pw-muted\">--</td>" not in body
 
 
 if __name__ == "__main__":
