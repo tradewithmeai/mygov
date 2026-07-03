@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sqlite3
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -27,6 +29,14 @@ COMMONS_VOTES_BASE_URL = "https://commonsvotes-api.parliament.uk/data"
 DIVISIONS_SEARCH_URL = f"{COMMONS_VOTES_BASE_URL}/divisions.json/search"
 TIMEOUT_SECONDS = 30.0
 USER_AGENT = "YourGov data updater"
+# The refresh makes hundreds of upstream calls; a single transient blip (a read
+# timeout, a dropped connection, or a 5xx) used to abort the whole run and fire a
+# false-alarm failure. Retry those with exponential backoff + jitter so a blip
+# self-heals within the run, while a genuine sustained outage still fails loudly
+# after the attempts are exhausted.
+RETRY_ATTEMPTS = 4
+RETRY_BACKOFF_BASE_SECONDS = 1.5
+_RETRYABLE_NETWORK_ERRORS = (httpx.TimeoutException, httpx.TransportError)
 # Stored member rows include up to four tellers that the announced Aye/No tally
 # excludes, and a handful of voters can be missing from the current member list, so
 # a division is treated as complete when it stores at least (aye+no - tolerance) rows.
@@ -156,9 +166,29 @@ def latest_local_division_id(conn: sqlite3.Connection) -> int | None:
 
 
 def _get_json(client, url: str, params: dict[str, Any] | None = None):
-    response = client.get(url, params=params)
-    response.raise_for_status()
-    return response.json()
+    """GET + parse JSON, retrying transient failures with exponential backoff.
+
+    Retries read/connect/network timeouts, transport errors, and 5xx responses;
+    a 4xx (a real client error) is raised immediately. After RETRY_ATTEMPTS the
+    last error is re-raised so a sustained outage still surfaces as a failure.
+    """
+    last_error: Exception | None = None
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+        except _RETRYABLE_NETWORK_ERRORS as exc:
+            last_error = exc
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code < 500:
+                raise  # client error (4xx) — retrying will not help
+            last_error = exc
+        if attempt < RETRY_ATTEMPTS - 1:
+            delay = RETRY_BACKOFF_BASE_SECONDS * (2 ** attempt) + random.uniform(0, 0.5)
+            time.sleep(delay)
+    assert last_error is not None  # loop only exits here after a caught error
+    raise last_error
 
 
 def fetch_current_commons_members(client, page_size: int = 100) -> list[dict[str, Any]]:
