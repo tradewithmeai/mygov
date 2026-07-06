@@ -168,6 +168,30 @@ def _inject_skip_link(response):
     return response
 
 
+@app.after_request
+def _inject_analytics(response):
+    """Inject the central solvX analytics tracker into every HTML page. yourgov has
+    no shared base template, so this one hook covers all ~26 templates at once. The
+    script reports into the shared monitor on solvx.uk cross-origin."""
+    try:
+        ctype = response.headers.get("Content-Type", "")
+        if "text/html" not in ctype or response.direct_passthrough:
+            return response
+        body = response.get_data()
+        if b"solvx.uk/analytics.js" in body or b"</head>" not in body:
+            return response
+        body = body.replace(
+            b"</head>",
+            b'<script src="https://solvx.uk/analytics.js" async></script></head>',
+            1,
+        )
+        response.set_data(body)
+    except Exception:
+        # Analytics must never break a page render.
+        return response
+    return response
+
+
 def _ensure_db():
     """Copy seed DB to /tmp; re-copy if the bundled seed is newer."""
     if DB_PATH == _SEED_DB:
