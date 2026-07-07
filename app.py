@@ -2739,6 +2739,15 @@ def constituency_map_pro(subpath=""):
     )
 
 
+@app.route("/globe-map")
+def globe_map():
+    """Combined asset: the /global feasibility globe with the UK constituency
+    map drawn on its surface. Clicking the UK zooms into the untouched
+    /map/pro promap bundle in a full-screen overlay. Additive — /global,
+    /map, /map/pro and /map/relay are unchanged."""
+    return render_template("globe_map.html", asset_version=app.config["ASSET_VERSION"])
+
+
 @app.route("/ab_map")
 def ab_map():
     variant = request.args.get("variant", "a").lower()
