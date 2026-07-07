@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="{{ active_locale }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globe &amp; UK Constituency Map · YourGov</title>
+  <meta name="description" content="The 3D feasibility globe with the UK constituency map drawn on its surface. Click the UK to zoom into the full interactive 2D map.">
+  <link rel="stylesheet" href="/static/global_globe.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+  <link rel="stylesheet" href="/static/globe_map.css{% if asset_version %}?v={{ asset_version }}{% endif %}">
+</head>
+<body>
+<main class="global-shell"
+      data-feasibility-url="/api/global/feasibility"
+      data-constituency-url="/static/data/geo/constituencies-uk-2024-globe.geojson{% if asset_version %}?v={{ asset_version }}{% endif %}"
+      data-uk-outline-url="/static/data/geo/uk-outline-globe.geojson{% if asset_version %}?v={{ asset_version }}{% endif %}"
+      data-map-url="/map/pro"
+      data-active-cc="{{ active_cc }}"
+      data-locale="{{ active_locale }}">
+  <header class="global-hero" aria-label="Globe and UK map introduction">
+    <div class="hero-copy">
+      <p class="eyebrow">YourGov · globe + constituency map</p>
+      <h1>Globe &amp; UK Constituency Map</h1>
+      <p class="hero-subtitle">The feasibility globe with all 650 UK constituencies mapped onto its surface.</p>
+      <p class="hero-note">Drag, scroll and search exactly as on the Global Civic Lens. Click the UK landmass to zoom into the full interactive constituency map.</p>
+    </div>
+    <nav class="hero-actions" aria-label="Globe and map navigation">
+      <a href="/home?lang={{ active_locale }}" class="nav-pill">{{ t('back_to_yourgov') }}</a>
+      <a href="/global?lang={{ active_locale }}" class="nav-pill secondary">Global Civic Lens</a>
+    </nav>
+  </header>
+
+  <section class="stats-strip" aria-label="Feasibility summary">
+    <article class="stat-card live">
+      <span class="stat-value" id="stat-live">0</span>
+      <span class="stat-label">{{ t('stat_completed') }}</span>
+    </article>
+    <article class="stat-card green">
+      <span class="stat-value" id="stat-green">0</span>
+      <span class="stat-label">{{ t('stat_strong') }}</span>
+    </article>
+    <article class="stat-card orange">
+      <span class="stat-value" id="stat-orange">0</span>
+      <span class="stat-label">{{ t('stat_possible') }}</span>
+    </article>
+    <article class="stat-card red">
+      <span class="stat-value" id="stat-red">0</span>
+      <span class="stat-label">not build-ready</span>
+    </article>
+    <article class="stat-card unmapped">
+      <span class="stat-value" id="stat-unmapped">0</span>
+      <span class="stat-label">{{ t('stat_not_mapped') }}</span>
+    </article>
+  </section>
+
+  <section class="global-layout">
+    <section class="globe-panel" aria-label="Interactive 3D world globe with UK constituencies">
+      <div class="globe-topline">
+        <div>
+          <p class="eyebrow">Click the UK</p>
+          <h2>Zoom from orbit into every constituency</h2>
+        </div>
+        <div class="globe-controls">
+          <div class="globe-search" id="country-search-wrap">
+            <label class="sr-only" for="country-search-input">Search country</label>
+            <input id="country-search-input" type="search" placeholder="Search countries..." autocomplete="off" spellcheck="false" aria-label="Search countries">
+            <div id="country-search-results" class="country-search-results" hidden></div>
+          </div>
+          <div class="globe-controls-note">Drag to rotate · Scroll to zoom · Click the UK for the map</div>
+        </div>
+      </div>
+
+      <div id="globe-stage" class="globe-stage" tabindex="0" role="application" aria-label="3D feasibility globe with UK constituency boundaries. Click the UK to open the 2D constituency map.">
+        <div id="globe-loading" class="globe-loading" role="status">Loading globe and constituencies...</div>
+        <div id="global-tooltip" class="global-tooltip" hidden></div>
+      </div>
+
+      <div class="legend" aria-label="Feasibility legend">
+        <button type="button" class="legend-filter" data-filter="live"><i class="legend-swatch live"></i>Completed & live adapter</button>
+        <button type="button" class="legend-filter" data-filter="green"><i class="legend-swatch green"></i>Green: clear pass / strong candidate</button>
+        <button type="button" class="legend-filter" data-filter="orange"><i class="legend-swatch orange"></i>Orange: possible but requires work</button>
+        <button type="button" class="legend-filter" data-filter="red"><i class="legend-swatch red"></i>Red: currently unavailable or insufficient verified data</button>
+      </div>
+    </section>
+
+    <aside class="country-panel" aria-live="polite" aria-label="Selected country details">
+      <div class="country-card" id="country-card">
+        <p class="eyebrow">Selected country</p>
+        <h2 id="country-name">United Kingdom</h2>
+        <div class="status-line">
+          <span class="status-dot green" id="status-dot"></span>
+          <span id="country-status">Working UK adapter</span>
+        </div>
+        <p id="country-summary" class="country-summary">The UK YourGov route is the working reference adapter.</p>
+
+        <dl class="country-meta">
+          <div>
+            <dt>Readiness</dt>
+            <dd id="country-tier">Ready/Pilot</dd>
+          </div>
+          <div>
+            <dt>Confidence</dt>
+            <dd id="country-confidence">high</dd>
+          </div>
+          <div>
+            <dt>Report score</dt>
+            <dd id="country-score">95</dd>
+          </div>
+        </dl>
+
+        <div class="detail-section">
+          <h3>What data exists?</h3>
+          <ul id="available-data" class="chip-list"></ul>
+        </div>
+
+        <div class="detail-section">
+          <h3>What is missing?</h3>
+          <ul id="missing-data" class="plain-list"></ul>
+        </div>
+
+        <div class="next-action">
+          <span>Likely next adapter work</span>
+          <strong id="next-action">Use as the reference adapter for future country implementations.</strong>
+        </div>
+
+        <p class="caveat">This is feasibility, not a political score. It measures whether source-linked civic data is usable enough to build a YourGov-style explainer.</p>
+      </div>
+      <div class="country-list-card" id="country-list-card" hidden>
+        <p class="eyebrow">Filtered countries</p>
+        <h2 id="filter-title">Countries</h2>
+        <p id="filter-meta" class="country-summary"></p>
+        <div id="filter-list" class="country-filter-list" role="listbox" aria-label="Filtered country list"></div>
+        <button type="button" id="filter-back" class="nav-pill secondary filter-back-btn">Back to selected country</button>
+      </div>
+    </aside>
+  </section>
+
+  <section class="adapter-note" aria-label="Asset note">
+    <p><strong>How this works:</strong> the globe behaves exactly like <a href="/global">/global</a>. The 650 constituency boundaries (ONS July 2024, EPSG:4326) are drawn on the sphere with the same latitude/longitude mapping as the country borders. Clicking the UK opens the same interactive map that lives at <a href="/map/pro">/map/pro</a>, unchanged.</p>
+    <p class="hard-caveat">Boundary data: Office for National Statistics Open Geography Portal; contains Ordnance Survey and ONS intellectual property.</p>
+  </section>
+</main>
+
+<!-- Full-screen overlay hosting the untouched /map/pro promap bundle. -->
+<div id="uk-map-overlay" class="uk-map-overlay" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Interactive UK constituency map">
+  <div class="uk-map-chrome">
+    <button type="button" id="uk-map-back" class="nav-pill uk-map-back" aria-label="Close the constituency map and return to the globe">&larr; Back to globe</button>
+  </div>
+  <div class="uk-map-frame-wrap">
+    <div id="uk-map-fallback" class="uk-map-fallback" hidden>
+      <p>The constituency map did not load. <a href="/map/pro">Open it directly</a> or press Back to return to the globe.</p>
+    </div>
+    <iframe id="uk-map-frame" class="uk-map-frame" title="Interactive 2D UK constituency map" loading="eager" referrerpolicy="same-origin"></iframe>
+  </div>
+</div>
+
+<noscript>
+  <div class="noscript-warning">This 3D globe needs JavaScript. The constituency map is available directly at <code>/map/pro</code>.</div>
+</noscript>
+
+<script type="module" src="/static/globe_map.js{% if asset_version %}?v={{ asset_version }}{% endif %}"></script>
+</body>
+</html>

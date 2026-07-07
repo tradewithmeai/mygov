@@ -1,0 +1,70 @@
+/* Styles specific to the /globe-map combined asset.
+   Everything else comes from global_globe.css (shared, unmodified) so the
+   globe looks and behaves identically to /global. */
+
+/* Full-screen overlay hosting the /map/pro iframe */
+.uk-map-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #020617;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.uk-map-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uk-map-overlay { transition: none; }
+}
+
+.uk-map-chrome {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 62;
+}
+
+.uk-map-back {
+  cursor: pointer;
+  box-shadow: 0 2px 14px rgba(2, 6, 23, 0.65);
+}
+
+.uk-map-frame-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.uk-map-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #020617;
+}
+
+.uk-map-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: #e2e8f0;
+  background: rgba(2, 6, 23, 0.92);
+}
+
+.uk-map-fallback a {
+  color: #7dd3fc;
+}
