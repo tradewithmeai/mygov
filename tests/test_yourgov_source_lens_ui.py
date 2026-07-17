@@ -113,7 +113,10 @@ def test_source_lens_renders_yourgov_shell():
 def test_yourgov_guided_route_public_copy_replaces_source_lens_journey_copy():
     html = _source_lens_html()
 
-    assert "<title>YourGov</title>" in html
+    # The entry-shell <title> is now keyword-led for SEO (was the bare
+    # "<title>YourGov</title>"); it still leads with the brand.
+    assert "<title>YourGov" in html
+    assert "UK Constituency Map" in html and "MP Voting Records" in html
     # Brand header and the labelled left-panel search were removed; the page
     # leads with the MP voting record and uses the centre "S" search widget.
     assert "YourGov UK" not in html
