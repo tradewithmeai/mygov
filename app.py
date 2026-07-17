@@ -18,6 +18,7 @@ import os
 import gzip
 import shutil
 import sqlite3
+import html
 import json
 import re
 import time
@@ -188,6 +189,62 @@ def _inject_analytics(response):
         response.set_data(body)
     except Exception:
         # Analytics must never break a page render.
+        return response
+    return response
+
+
+# Shared on-page SEO tags (meta description, canonical, Open Graph, Twitter card),
+# injected site-wide right after the first <head>. There is no shared base template
+# (each of ~26 templates has its own <head>), so mirror the feedback/skip-link
+# injectors above rather than edit every template. Page-specific tags (the <title>
+# and JSON-LD) stay in the individual shells; this only adds SHARED tags and never
+# replaces an existing one, so a template can still override per-page. Idempotent,
+# skips non-HTML and the embeddable map iframe, and fails closed (never breaks a render).
+_SEO_HEAD_SKIP_PREFIXES = ("/api", "/static", "/map/relay")
+_HEAD_OPEN_RE = re.compile(rb"<head\b[^>]*>", re.IGNORECASE)
+_SEO_OG_IMAGE = "https://solvx.uk/screenshot-yourgov-map.png"
+_SEO_DESC = (
+    "Explore every UK constituency on an interactive map coloured by party, see how "
+    "your MP voted, and compare parties in plain English. By solvX."
+)
+
+
+@app.after_request
+def _inject_seo_head(response):
+    try:
+        path = request.path or ""
+        if any(path == p or path.startswith(p + "/") for p in _SEO_HEAD_SKIP_PREFIXES):
+            return response
+        ctype = response.headers.get("Content-Type", "")
+        if "text/html" not in ctype or response.direct_passthrough:
+            return response
+        body = response.get_data()
+        m = _HEAD_OPEN_RE.search(body)
+        if not m or b'property="og:site_name"' in body:  # no <head>, or already injected
+            return response
+        # HTML-escape (quote=True) before interpolating into attribute context:
+        # request.path is attacker-influenced and reaches HTML on routes like
+        # /map/pro/<path:subpath>, so an unescaped '"' would break out of the
+        # href/content attribute (reflected XSS). Legit paths are unaffected.
+        canonical = html.escape("https://yourgov.solvx.uk" + path, quote=True)
+        tags = [
+            "" if b'name="description"' in body else
+                '<meta name="description" content="%s"/>' % _SEO_DESC,
+            '<link rel="canonical" href="%s"/>' % canonical,
+            '<meta property="og:site_name" content="YourGov by solvX"/>',
+            '<meta property="og:type" content="website"/>',
+            '<meta property="og:title" content="YourGov — the UK constituency map &amp; MP voting records"/>',
+            '<meta property="og:description" content="%s"/>' % _SEO_DESC,
+            '<meta property="og:url" content="%s"/>' % canonical,
+            '<meta property="og:image" content="%s"/>' % _SEO_OG_IMAGE,
+            '<meta name="twitter:card" content="summary_large_image"/>',
+            '<meta name="twitter:title" content="YourGov — UK constituency map &amp; MP voting records"/>',
+            '<meta name="twitter:image" content="%s"/>' % _SEO_OG_IMAGE,
+        ]
+        snippet = ("".join(t for t in tags if t)).encode("utf-8")
+        response.set_data(body[:m.end()] + snippet + body[m.end():])
+    except Exception:
+        # SEO tags must never break a page render.
         return response
     return response
 
