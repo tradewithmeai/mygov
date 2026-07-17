@@ -592,16 +592,19 @@ def check_payloads(v: Validation, client, division_id: int) -> None:
     )
 
 
-def _second_division_id(client, primary_id: int) -> int | None:
-    response, payload = _json_response(client, "/api/lens/source-divisions?limit=12")
+def _recent_division_ids(client, primary_id: int, limit: int = 12) -> list[int]:
+    """Recent division ids (most-recent first) other than `primary_id`, used as
+    contrast candidates for the derivation check."""
+    response, payload = _json_response(client, f"/api/lens/source-divisions?limit={limit}")
     divisions = payload.get("divisions") if isinstance(payload, dict) else None
     if not isinstance(divisions, list):
-        return None
+        return []
+    ids: list[int] = []
     for division in divisions:
         candidate = _safe_int(division.get("division_id")) if isinstance(division, dict) else None
         if candidate is not None and candidate != primary_id:
-            return candidate
-    return None
+            ids.append(candidate)
+    return ids
 
 
 def _mode_category_map(client, division_id: int, mode: str) -> dict[str, str]:
@@ -620,24 +623,46 @@ def _mode_category_map(client, division_id: int, mode: str) -> dict[str, str]:
 
 def check_division_derivation(v: Validation, client, division_id: int) -> None:
     """Prove the per-division map modes actually change with the selected division —
-    not just that a label mentions the title. party-split and gender-split must differ
-    across two distinct divisions (driven by who voted), or they are a constant
-    national map masquerading as division-scoped."""
-    other_id = _second_division_id(client, division_id)
-    if other_id is None:
+    not just that a label mentions the title — or they are a constant national map
+    masquerading as division-scoped.
+
+    Each mode must differ from AT LEAST ONE recent division (driven by who voted).
+    Two *adjacent* divisions can legitimately be identical — e.g. two back-to-back
+    votes carried by the same lobby produce byte-identical maps — so we compare the
+    selected division against SEVERAL recent ones and pass a mode as soon as any of
+    them differs. Only a mode that is identical across every compared division is a
+    genuine red flag. (Comparing against just the single preceding division used to
+    false-fail whenever the two latest divisions happened to share a lobby.)"""
+    candidate_ids = _recent_division_ids(client, division_id)
+    if not candidate_ids:
         v.pass_("division derivation", "only one division available to compare")
         return
 
     for mode in ("vote-split", "party-split", "gender-split", "rebel-split"):
         primary = _mode_category_map(client, division_id, mode)
-        other = _mode_category_map(client, other_id, mode)
-        shared = set(primary) & set(other)
-        differing = sum(1 for key in shared if primary[key] != other[key])
+        compared = 0
+        differing = 0
+        contrast_id = None
+        for other_id in candidate_ids:
+            other = _mode_category_map(client, other_id, mode)
+            shared = set(primary) & set(other)
+            if not shared:
+                continue
+            compared += 1
+            diff = sum(1 for key in shared if primary[key] != other[key])
+            if diff > 0:
+                differing = diff
+                contrast_id = other_id
+                break
         v.check(
             f"division derivation {mode}",
-            bool(shared) and differing > 0,
-            f"{differing} of {len(shared)} constituencies differ between "
-            f"divisions {division_id} and {other_id}",
+            compared > 0 and differing > 0,
+            (
+                f"differs from division {contrast_id} "
+                f"({differing} of {len(primary)} constituencies)"
+                if differing > 0
+                else f"identical across all {compared} recent division(s) compared"
+            ),
         )
 
 
