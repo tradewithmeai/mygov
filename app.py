@@ -18,6 +18,7 @@ import os
 import gzip
 import shutil
 import sqlite3
+import html
 import json
 import re
 import time
@@ -197,7 +198,11 @@ def _inject_seo_head(response):
         m = _HEAD_OPEN_RE.search(body)
         if not m or b'property="og:site_name"' in body:  # no <head>, or already injected
             return response
-        canonical = "https://yourgov.solvx.uk" + path
+        # HTML-escape (quote=True) before interpolating into attribute context:
+        # request.path is attacker-influenced and reaches HTML on routes like
+        # /map/pro/<path:subpath>, so an unescaped '"' would break out of the
+        # href/content attribute (reflected XSS). Legit paths are unaffected.
+        canonical = html.escape("https://yourgov.solvx.uk" + path, quote=True)
         tags = [
             "" if b'name="description"' in body else
                 '<meta name="description" content="%s"/>' % _SEO_DESC,

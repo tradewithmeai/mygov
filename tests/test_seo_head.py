@@ -48,6 +48,19 @@ def test_api_and_static_paths_are_skipped():
     assert 'og:site_name' not in r.get_data(as_text=True)
 
 
+def test_injector_escapes_attacker_controlled_path():
+    # request.path is attacker-influenced and lands in the href/content attributes.
+    # Drive a malicious path through the injector directly and prove a '"' cannot
+    # break out of the attribute to inject markup (reflected XSS defence-in-depth).
+    from flask import Response
+    with appmod.app.test_request_context("/x/a%22%3E%3Cscript%3Ealert(1)%3C/script%3E"):
+        resp = Response("<html><head></head><body>ok</body></html>", content_type="text/html")
+        out = appmod._inject_seo_head(resp).get_data(as_text=True)
+    assert 'rel="canonical"' in out                       # it did inject here
+    assert '"><script>alert(1)</script>' not in out       # no raw attribute breakout
+    assert "a&quot;&gt;&lt;script&gt;" in out              # path escaped into the attribute
+
+
 def test_entry_shell_has_keyword_title_and_json_ld():
     body = _client().get("/source-lens").get_data(as_text=True)
     assert "<title>YourGov" in body and "UK Constituency Map" in body
