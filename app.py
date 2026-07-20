@@ -202,7 +202,7 @@ def _inject_analytics(response):
 # skips non-HTML and the embeddable map iframe, and fails closed (never breaks a render).
 _SEO_HEAD_SKIP_PREFIXES = ("/api", "/static", "/map/relay")
 _HEAD_OPEN_RE = re.compile(rb"<head\b[^>]*>", re.IGNORECASE)
-_SEO_OG_IMAGE = "https://solvx.uk/screenshot-yourgov-map.png"
+_SEO_OG_IMAGE = "https://yourgov.solvx.uk/static/img/og-yourgov.png"
 _SEO_DESC = (
     "Explore every UK constituency on an interactive map coloured by party, see how "
     "your MP voted, and compare parties in plain English. By solvX."
