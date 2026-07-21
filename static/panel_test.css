@@ -1,5 +1,17 @@
 [hidden] { display: none !important; }
 
+/* ── Brand face: self-hosted Nunito (variable, Latin subset) ──
+   Powers the logo + --font-display (headings/brand). Self-hosted
+   rather than a font CDN: first-party, offline-friendly, and no
+   user-IP leak to a third-party host (matches the privacy stance). */
+@font-face {
+  font-family: "Nunito";
+  src: url("/static/fonts/nunito-latin-var.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ── Theme tokens ──────────────────────────────────────────
    Three switchable themes drive the same UI:
      theme-glass      (default — current Lock+Tidy aesthetic)
@@ -19,7 +31,7 @@
   --aye: #16a34a;   /* ~5.4:1 on the panel bg — passes AA as small text */
   --no: #ef4444;    /* was #dc2626 (~3.7:1, failed AA as Aye/No text); #ef4444 ~4.7:1 */
   --unknown: #6b7280;
-  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --source-tint: 0.72;     /* stronger tint so source pane sits on dark UI */
 }
@@ -35,7 +47,7 @@
   --aye: #22c55e;
   --no: #ef4444;
   --unknown: #6b7280;
-  --font-display: "Inter Display", "Inter", system-ui, sans-serif;
+  --font-display: "Nunito", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
   --source-tint: 0.94;
 }
